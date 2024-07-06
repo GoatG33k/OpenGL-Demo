@@ -1,0 +1,17 @@
+{
+    "env": {
+        "myIncludePath": [ "${workspaceFolder}/vendor", "${workspaceFolder}/src" ],
+        "myDefines": [ "DEBUG" ]
+    },
+    "configurations": [
+        {
+            "name": "Windows",
+            "includePath": [ "${myIncludePath}" ],
+            "defines": [ "${myDefines}" ],
+            "cStandard": "c11",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
