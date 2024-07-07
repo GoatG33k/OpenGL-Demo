@@ -25,26 +25,40 @@ include_directories(vendor/egl/api)
 
 # Import easylogging++
 include_directories(vendor/easyloggingpp/src)
-set(INCLUDE_SRC ${INCLUDE_SRC} 
+set(INCLUDE_SRC ${INCLUDE_SRC}
     "vendor/easyloggingpp/src/easylogging++.h"
     "vendor/easyloggingpp/src/easylogging++.cc"
-    )
+)
 
-if (MSVC)
+if(MSVC)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ENTRY:mainCRTStartup")
+endif()
+
+# Remove this because its dumb :)
+if(APPLE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+if(WIN32)
+    add_compile_definitions(WIN32)
+elseif(LINUX)
+    add_compile_definitions(LINUX)
+elseif(APPLE)
+    add_compile_definitions(MACOS)
+    add_compile_definitions(GL_SILENCE_DEPRECATION)
 endif()
 
 # Assign source files and target output
 set(DEMO_SRC src/main.cpp)
 
-add_executable(GameDemo ${DEMO_SRC} ${INCLUDE_SRC} )
+add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})
 add_dependencies(GameDemo glfw)
 target_link_libraries(GameDemo ${OPENGL_LIBRARIES} glfw)
 
-if( MSVC )
-    if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
-        message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
-    else()
-        set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GameDemo )
-    endif()
-endif()
+# if( MSVC )
+# if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
+# message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
+# else()
+# set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GameDemo )
+# endif()
+# endif()

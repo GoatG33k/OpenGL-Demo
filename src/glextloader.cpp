@@ -1,41 +1,49 @@
-static PFNGLCREATESHADERPROC glCreateShader = NULL;
-static PFNGLSHADERSOURCEPROC glShaderSource = NULL;
-static PFNGLCOMPILESHADERPROC glCompileShader = NULL;
-static PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
-static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
-static PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
-static PFNGLATTACHSHADERPROC glAttachShader = NULL;
-static PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
-static PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
-static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
-static PFNGLDELETESHADERPROC glDeleteShader = NULL;
-static PFNGLUSEPROGRAMPROC glUseProgram = NULL;
+#include <cstddef>
+#include <GL/glext.h>
+
+#ifdef MACOS
+#define PFNGLCOMPILERSHADERPROC PFNGLSPECIALIZESHADERPROC
+#endif // MACOS
+
+// static PFNGLSHADERPROC glCreateShader = NULL;
+// static PFNGLSHADERSOURCEPROC glShaderSource = NULL;
+// static PFNGLCOMPILESHADERPROC glCompileShader = NULL;
+// static PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
+// static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
+// static PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
+// static PFNGLATTACHSHADERPROC glAttachShader = NULL;
+// static PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
+// static PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
+// static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
+// static PFNGLDELETESHADERPROC glDeleteShader = NULL;
+// static PFNGLUSEPROGRAMPROC glUseProgram = NULL;
 static PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = NULL;
 static PFNGLBINDVERTEXARRAYPROC glBindVertexArray = NULL;
 static PFNGLDEBUGMESSAGECALLBACKPROC glDebugMessageCallback = NULL;
-static PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
-static PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
-static PFNGLUNIFORM2FPROC glUniform2f = NULL;
-static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
-static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
-static PFNGLBUFFERDATAPROC glBufferData = NULL;
-static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
-static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
-static PFNGLUNIFORM1FPROC glUniform1f = NULL;
-static PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
+// static PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
+// static PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
+// static PFNGLUNIFORM2FPROC glUniform2f = NULL;
+// static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
+// static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
+// static PFNGLBUFFERDATAPROC glBufferData = NULL;
+// static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
+// static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
+// static PFNGLUNIFORM1FPROC glUniform1f = NULL;
+// static PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
 static PFNGLDRAWARRAYSINSTANCEDPROC glDrawArraysInstanced = NULL;
-static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
-static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
-static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
-static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
-static PFNGLUNIFORM1IPROC glUniform1i = NULL;
-static PFNGLDRAWBUFFERSPROC glDrawBuffers = NULL;
-static PFNGLUNIFORM4FPROC glUniform4f = NULL;
+// static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
+// static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
+// static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
+// static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
+// static PFNGLUNIFORM1IPROC glUniform1i = NULL;
+// static PFNGLDRAWBUFFERSPROC glDrawBuffers = NULL;
+// static PFNGLUNIFORM4FPROC glUniform4f = NULL;
+
 // TODO: there is something fishy with Windows gl.h header
 // Let's try to ship our own gl.h just like glext.h
-#ifdef _WIN32
+#ifdef WIN32
 static PFNGLACTIVETEXTUREPROC glActiveTexture = NULL;
-#endif // _WIN32
+#endif // WIN32
 
 inline GLFWglproc getProcAddress(const char *name)
 {
@@ -49,7 +57,10 @@ inline GLFWglproc getProcAddress(const char *name)
 
 static void load_gl_extensions(void)
 {
-    // TODO: check for failtures?
+    glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)getProcAddress("glGenVertexArrays");
+    glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)getProcAddress("glBindVertexArray");
+#ifdef WIN32
+    // TODO: check for failures?
     // Maybe some of the functions are not available
     glCreateShader = (PFNGLCREATESHADERPROC)getProcAddress("glCreateShader");
     glShaderSource = (PFNGLSHADERSOURCEPROC)getProcAddress("glShaderSource");
@@ -63,8 +74,6 @@ static void load_gl_extensions(void)
     glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)getProcAddress("glGetProgramInfoLog");
     glDeleteShader = (PFNGLDELETESHADERPROC)getProcAddress("glDeleteShader");
     glUseProgram = (PFNGLUSEPROGRAMPROC)getProcAddress("glUseProgram");
-    glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)getProcAddress("glGenVertexArrays");
-    glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)getProcAddress("glBindVertexArray");
     glDeleteProgram = (PFNGLDELETEPROGRAMPROC)getProcAddress("glDeleteProgram");
     glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)getProcAddress("glGetUniformLocation");
     glUniform2f = (PFNGLUNIFORM2FPROC)getProcAddress("glUniform2f");
@@ -82,14 +91,15 @@ static void load_gl_extensions(void)
     glUniform1i = (PFNGLUNIFORM1IPROC)getProcAddress("glUniform1i");
     glDrawBuffers = (PFNGLDRAWBUFFERSPROC)getProcAddress("glDrawBuffers");
     glUniform4f = (PFNGLUNIFORM4FPROC)getProcAddress("glUniform4f");
-#ifdef _WIN32
     glActiveTexture = (PFNGLACTIVETEXTUREPROC)getProcAddress("glActiveTexture");
-#endif // _WIN32
+#endif // WIN32
 
     if (glfwExtensionSupported("GL_ARB_debug_output"))
     {
         fprintf(stderr, "INFO: ARB_debug_output is supported\n");
+#ifdef WIN32
         glDebugMessageCallback = (PFNGLDEBUGMESSAGECALLBACKPROC)glfwGetProcAddress("glDebugMessageCallback");
+#endif // WIN32
     }
     else
     {
@@ -99,7 +109,9 @@ static void load_gl_extensions(void)
     if (glfwExtensionSupported("GL_EXT_draw_instanced"))
     {
         fprintf(stderr, "INFO: EXT_draw_instanced is supported\n");
+#ifdef WIN32
         glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCEDPROC)glfwGetProcAddress("glDrawArraysInstanced");
+#endif // WIN32
     }
     else
     {

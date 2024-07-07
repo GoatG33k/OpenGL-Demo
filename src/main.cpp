@@ -9,7 +9,7 @@
 
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
-#include "glextloader.c"
+#include "glextloader.cpp"
 
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
@@ -42,11 +42,12 @@ const float vertices[] = {
 
 inline void run_game()
 {
-
     glfwSetErrorCallback([](int error, const char *description)
                          { LOG(ERROR) << "Fatal Error: " << description; });
 
-    GameWindow *window = new GameWindow();
+    LOG(INFO) << "Hello!";
+    GameWindow *window = new GameWindow("Hello, World!");
+    LOG(INFO) << "world!";
 
     int success;
     char infoLog[512];
@@ -91,12 +92,16 @@ inline void run_game()
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    LOG(INFO) << "glDeleteShader - cleaned up shaders";
 
     GLuint vao, vbo;
     glGenVertexArrays(1, &vao);
+    LOG(INFO) << "glGenVertexArrays called";
     glGenBuffers(1, &vbo);
-
+    LOG(INFO) << "glGenBuffers called";
     glBindVertexArray(vao);
+    LOG(INFO) << "glBindVertexArray called";
+    LOG(INFO) << "Created VAO and VBO";
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -105,6 +110,7 @@ inline void run_game()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    LOG(INFO) << "Bound vertex data to VAO and VBO";
 
     window->loop([vao, shaderProgram]()
                  { 
@@ -115,8 +121,6 @@ inline void run_game()
     // glDeleteVertexArrays(1, &vao);
     // glDeleteBuffers(1, &vbo);
     glDeleteProgram(shaderProgram);
-
-    delete window;
 }
 
 int main(int argc, char *argv[])

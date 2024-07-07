@@ -1,4 +1,14 @@
+# Compilation assets
 build/**/*
-.vscode/**
+CMakeFiles/**
+CMakeCache.txt
+cmake_install.cmake
+GameDemo
+Makefile
+
+# Dependencies
 vendor/**/*
 !vendor/.gitkeep
+
+# Editor files
+.vscode/**

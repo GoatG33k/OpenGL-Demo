@@ -1,3 +1,5 @@
+#include <GLFW/glfw3.h>
+#include "easylogging++.h"
 #include <chrono>
 
 using namespace std::chrono;
@@ -58,10 +60,10 @@ namespace goat
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+#ifndef MACOS
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
+#endif
             glfwWindowHint(GLFW_SAMPLES, 4);
-            glEnable(GL_MULTISAMPLE);
 
             GLFWwindow *_window = glfwCreateWindow(width, height, window_title.c_str(), NULL, NULL);
             if (!_window)
@@ -72,16 +74,22 @@ namespace goat
 
             window = _window;
             glfwMakeContextCurrent(window);
+            LOG(DEBUG) << "glfwMakeContextCurrent(window) called";
+
             glViewport(0, 0, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+            LOG(DEBUG) << "glViewport set";
 
             // Resolve OpenGL function pointers once the GLFW window is created
             load_gl_extensions();
+            LOG(DEBUG) << "load_gl_extensions called";
 
             // Support the window being resized
             glfwSetFramebufferSizeCallback(window, &GameWindow::set_framebuffer_size);
+            LOG(DEBUG) << "glfwSetFramebufferSizeCallback called";
 
             // Handle keypresses
             glfwSetKeyCallback(window, &GameWindow::handle_keypress);
+            LOG(DEBUG) << "glfwSetKeyCallback called";
         }
 
         ~GameWindow()
@@ -92,9 +100,15 @@ namespace goat
         void loop(std::function<void()> tick_fn)
         {
             if (!window)
-                throw std::runtime_error("Window not initialized");
+            {
+                LOG(ERROR) << "Window is null!";
+                return;
+            }
+            LOG(INFO) << "::loop invoked";
 
-            log_driver_info();
+            GameWindow::log_driver_info();
+            LOG(INFO) << "Starting game loop...";
+
             while (!glfwWindowShouldClose(window))
             {
                 glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
