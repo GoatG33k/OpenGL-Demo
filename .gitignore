@@ -6,6 +6,9 @@ cmake_install.cmake
 GameDemo
 Makefile
 
+# Logs
+*.log
+
 # Dependencies
 vendor/**/*
 !vendor/.gitkeep
