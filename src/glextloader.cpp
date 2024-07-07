@@ -4,44 +4,41 @@
 #ifdef MACOS
 #define PFNGLCOMPILERSHADERPROC PFNGLSPECIALIZESHADERPROC
 #endif // MACOS
-
-// static PFNGLSHADERPROC glCreateShader = NULL;
-// static PFNGLSHADERSOURCEPROC glShaderSource = NULL;
-// static PFNGLCOMPILESHADERPROC glCompileShader = NULL;
-// static PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
-// static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
-// static PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
-// static PFNGLATTACHSHADERPROC glAttachShader = NULL;
-// static PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
-// static PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
-// static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
-// static PFNGLDELETESHADERPROC glDeleteShader = NULL;
-// static PFNGLUSEPROGRAMPROC glUseProgram = NULL;
 static PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = NULL;
 static PFNGLBINDVERTEXARRAYPROC glBindVertexArray = NULL;
 static PFNGLDEBUGMESSAGECALLBACKPROC glDebugMessageCallback = NULL;
-// static PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
-// static PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
-// static PFNGLUNIFORM2FPROC glUniform2f = NULL;
-// static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
-// static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
-// static PFNGLBUFFERDATAPROC glBufferData = NULL;
-// static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
-// static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
-// static PFNGLUNIFORM1FPROC glUniform1f = NULL;
-// static PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
 static PFNGLDRAWARRAYSINSTANCEDPROC glDrawArraysInstanced = NULL;
-// static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
-// static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
-// static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
-// static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
-// static PFNGLUNIFORM1IPROC glUniform1i = NULL;
-// static PFNGLDRAWBUFFERSPROC glDrawBuffers = NULL;
-// static PFNGLUNIFORM4FPROC glUniform4f = NULL;
 
-// TODO: there is something fishy with Windows gl.h header
-// Let's try to ship our own gl.h just like glext.h
 #ifdef WIN32
+ static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
+ static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
+ static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
+ static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
+ static PFNGLUNIFORM1IPROC glUniform1i = NULL;
+ static PFNGLDRAWBUFFERSPROC glDrawBuffers = NULL;
+ static PFNGLUNIFORM4FPROC glUniform4f = NULL;
+ static PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
+ static PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
+ static PFNGLUNIFORM2FPROC glUniform2f = NULL;
+ static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
+ static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
+ static PFNGLBUFFERDATAPROC glBufferData = NULL;
+ static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
+ static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
+ static PFNGLUNIFORM1FPROC glUniform1f = NULL;
+ static PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
+ static PFNGLCREATESHADERPROC glCreateShader = NULL;
+ static PFNGLSHADERSOURCEPROC glShaderSource = NULL;
+ static PFNGLCOMPILESHADERPROC glCompileShader = NULL;
+ static PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
+ static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
+ static PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
+ static PFNGLATTACHSHADERPROC glAttachShader = NULL;
+ static PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
+ static PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
+ static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
+ static PFNGLDELETESHADERPROC glDeleteShader = NULL;
+ static PFNGLUSEPROGRAMPROC glUseProgram = NULL;
 static PFNGLACTIVETEXTUREPROC glActiveTexture = NULL;
 #endif // WIN32
 
