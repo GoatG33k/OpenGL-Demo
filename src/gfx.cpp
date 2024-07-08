@@ -90,29 +90,22 @@ namespace goat::gfx
     VBO::VBO(
         GLenum bufferType,
         const vector<float> &points,
-        uint dims,
         GLenum drawType) : bufferType(bufferType), drawType(drawType)
     {
         assert(bufferType == GL_ARRAY_BUFFER || bufferType == GL_ELEMENT_ARRAY_BUFFER);
         assert(drawType == GL_STATIC_DRAW || drawType == GL_DYNAMIC_DRAW);
-        assert(dims > 0 && dims <= 4);
+        // assert(dims > 0 && dims <= 4);
 
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-        glGenBuffers(1, &vbo);
-
-        uint vertPoints = points.size();
-        uint entries = (vertPoints / dims) + (vertPoints % dims != 0); // divide + round up
-        LOG(DEBUG) << "# of points  = " << vertPoints;
-        LOG(DEBUG) << "# of dims    = " << dims;
-        LOG(DEBUG) << "# of entries = " << entries;
+        glGenVertexArrays(1, &this->vao);
+        glGenBuffers(1, &this->vbo);
+        glBindVertexArray(this->vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertPoints, points.data(), drawType);
+        glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), &points[0], drawType);
 
         // Set index 0
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, dims, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -120,7 +113,7 @@ namespace goat::gfx
 
     VBO::~VBO()
     {
-        // Nothing to do really, OpenGL will clean up vertex arrays and buffers
-        // (I hope)
+        glDeleteVertexArrays(1, &this->vao);
+        glDeleteBuffers(1, &this->vbo);
     }
 }

@@ -8,6 +8,8 @@ include_directories(src src/gfx)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
 # Import GLFW
+add_compile_definitions(GL_SILENCE_DEPRECATION)
+
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)

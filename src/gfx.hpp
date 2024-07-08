@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <OpenGL/gl.h>
 #include <OpenGL/gl3.h>
 
@@ -46,14 +47,14 @@ namespace goat::gfx
         {
             program = glCreateProgram();
         }
-        ~ShaderProgram()
+        inline ~ShaderProgram()
         {
             if (program != 0)
                 glDeleteProgram(program);
         }
 
-        constexpr GLuint get_id() { return program; }
-        void use() { glUseProgram(program); }
+        constexpr GLuint get_id() { return this->program; }
+        inline void use() { glUseProgram(this->program); }
         void attachShader(Shader *shader);
         bool link();
     };
@@ -64,17 +65,16 @@ namespace goat::gfx
     private:
         GLenum bufferType;
         GLenum drawType;
-
-    public:
         GLuint vao;
         GLuint vbo;
 
+    public:
         ~VBO();
         VBO(
             GLenum bufferType,
             const std::vector<float> &points,
-            uint dims = 3,
-            GLenum drawType = GL_STATIC_DRAW);
-        void use() { glBindVertexArray(vao); }
+            GLenum drawType);
+        constexpr GLuint get_vao() { return this->vao; }
+        inline void use() { glBindVertexArray(this->vao); }
     };
 }
