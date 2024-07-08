@@ -6,21 +6,25 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <vector>
+
+#ifdef MACOS
+// #include <OpenGL/gl.h>
+#endif // MACOS
 
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
-#include "glextloader.cpp"
 
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
-// Begin core imports
-#include <gfx/gfx.cpp>
-#include <window.cpp>
-// End core imports
+#include <gfx.hpp>
+#include <window.hpp>
 
-using namespace goat;
+using namespace std;
 using namespace std::chrono;
+using namespace goat;
+using namespace goat::gfx;
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
@@ -35,7 +39,12 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "{\n"
                                    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
                                    "}\0";
-const float vertices[] = {
+
+const float *vertices = new float[]{
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f, 0.5f, 0.0f};
+const vector<float> verticesVec{
     -0.5f, -0.5f, 0.0f,
     0.5f, -0.5f, 0.0f,
     0.0f, 0.5f, 0.0f};
@@ -45,9 +54,7 @@ inline void run_game()
     glfwSetErrorCallback([](int error, const char *description)
                          { LOG(ERROR) << "Fatal Error: " << description; });
 
-    LOG(INFO) << "Hello!";
     GameWindow *window = new GameWindow("Hello, World!");
-    LOG(INFO) << "world!";
 
     int success;
     char infoLog[512];
@@ -108,18 +115,19 @@ inline void run_game()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // glBindVertexArray(0);
     LOG(INFO) << "Bound vertex data to VAO and VBO";
 
     window->loop([vao, shaderProgram]()
                  { 
+                    // glViewport(0, 0, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
                     glUseProgram(shaderProgram);
                     glBindVertexArray(vao);
                     glDrawArrays(GL_TRIANGLES, 0, 3); });
 
-    // glDeleteVertexArrays(1, &vao);
-    // glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
     glDeleteProgram(shaderProgram);
 }
 
