@@ -1,7 +1,6 @@
 #include <fstream>
 #include <assert.h>
 #include <easylogging++.h>
-#include <GLFW/glfw3.h>
 
 #include "gfx.hpp"
 

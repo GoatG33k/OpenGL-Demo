@@ -8,15 +8,12 @@
 #include <chrono>
 #include <vector>
 
-#ifdef MACOS
-// #include <OpenGL/gl.h>
-#endif // MACOS
-
-#define GLFW_INCLUDE_GLEXT
-#include <GLFW/glfw3.h>
-
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
+
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 #include <gfx.hpp>
 #include <window.hpp>
@@ -40,7 +37,7 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
                                    "}\0";
 
-const float *vertices = new float[]{
+const float vertices[]{
     -0.5f, -0.5f, 0.0f,
     0.5f, -0.5f, 0.0f,
     0.0f, 0.5f, 0.0f};
@@ -55,6 +52,13 @@ inline void run_game()
                          { LOG(ERROR) << "Fatal Error: " << description; });
 
     GameWindow *window = new GameWindow("Hello, World!");
+
+    // Load GLAD
+    int version = gladLoadGL(glfwGetProcAddress);
+    if (version == 0)
+    {
+        throw std::runtime_error("Failed to load OpenGL functions via GLAD");
+    }
 
     int success;
     char infoLog[512];
@@ -115,8 +119,8 @@ inline void run_game()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     LOG(INFO) << "Bound vertex data to VAO and VBO";
 
     window->loop([vao, shaderProgram]()

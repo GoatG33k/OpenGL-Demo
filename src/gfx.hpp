@@ -1,11 +1,8 @@
 #pragma once
 
 #include <string>
-#include <GLFW/glfw3.h>
-
-#ifdef MACOS
+#include <OpenGL/gl.h>
 #include <OpenGL/gl3.h>
-#endif // MACOS
 
 namespace goat::gfx
 {
@@ -56,7 +53,7 @@ namespace goat::gfx
         }
 
         constexpr GLuint get_id() { return program; }
-        constexpr void use() { glUseProgram(program); }
+        void use() { glUseProgram(program); }
         void attachShader(Shader *shader);
         bool link();
     };
@@ -78,6 +75,6 @@ namespace goat::gfx
             const std::vector<float> &points,
             uint dims = 3,
             GLenum drawType = GL_STATIC_DRAW);
-        constexpr void use() { glBindVertexArray(vao); }
+        void use() { glBindVertexArray(vao); }
     };
 }

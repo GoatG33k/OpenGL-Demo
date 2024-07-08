@@ -1,7 +1,5 @@
 #include <chrono>
-
 #include "window.hpp"
-#include "GLFW/glfw3.h"
 
 using namespace std::chrono;
 
@@ -71,19 +69,14 @@ namespace goat
         glfwSetErrorCallback(&handle_error);
 
         // Create a new GLFW window
-        GLFWwindow *_window = glfwCreateWindow(_width, _height, window_title.c_str(), NULL, NULL);
-        if (!_window)
+        window = glfwCreateWindow(_width, _height, window_title.c_str(), NULL, NULL);
+        if (!window)
         {
             glfwTerminate();
             throw std::runtime_error("Failed to create GLFW window");
         }
-
-        window = _window;
         glfwMakeContextCurrent(window);
         LOG(TRACE) << "glfwMakeContextCurrent(window) called";
-
-        // Configure the scale before any buffers are created
-        glScalef(1.0f, 1.0f, 1.0f);
 
         // Support the window being resized
         glfwSetFramebufferSizeCallback(window, &GameWindow::set_framebuffer_size);
