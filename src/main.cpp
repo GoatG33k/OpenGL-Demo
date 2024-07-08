@@ -6,21 +6,22 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-
-#define GLFW_INCLUDE_GLEXT
-#include <GLFW/glfw3.h>
-#include "glextloader.cpp"
+#include <vector>
 
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
-// Begin core imports
-#include <gfx/gfx.cpp>
-#include <window.cpp>
-// End core imports
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
-using namespace goat;
+#include <gfx.hpp>
+#include <window.hpp>
+
+using namespace std;
 using namespace std::chrono;
+using namespace goat;
+using namespace goat::gfx;
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
@@ -35,7 +36,12 @@ const char *fragmentShaderSource = "#version 330 core\n"
                                    "{\n"
                                    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
                                    "}\0";
-const float vertices[] = {
+
+const float vertices[]{
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f, 0.5f, 0.0f};
+const vector<float> verticesVec{
     -0.5f, -0.5f, 0.0f,
     0.5f, -0.5f, 0.0f,
     0.0f, 0.5f, 0.0f};
@@ -45,9 +51,14 @@ inline void run_game()
     glfwSetErrorCallback([](int error, const char *description)
                          { LOG(ERROR) << "Fatal Error: " << description; });
 
-    LOG(INFO) << "Hello!";
     GameWindow *window = new GameWindow("Hello, World!");
-    LOG(INFO) << "world!";
+
+    // Load GLAD
+    int version = gladLoadGL(glfwGetProcAddress);
+    if (version == 0)
+    {
+        throw std::runtime_error("Failed to load OpenGL functions via GLAD");
+    }
 
     int success;
     char infoLog[512];
@@ -114,12 +125,13 @@ inline void run_game()
 
     window->loop([vao, shaderProgram]()
                  { 
+                    // glViewport(0, 0, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
                     glUseProgram(shaderProgram);
                     glBindVertexArray(vao);
                     glDrawArrays(GL_TRIANGLES, 0, 3); });
 
-    // glDeleteVertexArrays(1, &vao);
-    // glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
     glDeleteProgram(shaderProgram);
 }
 

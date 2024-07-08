@@ -14,7 +14,9 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 include_directories(vendor/glfw/deps)
 add_subdirectory(vendor/glfw)
-set(INCLUDE_SRC ${INCLUDE_SRC} "${GLFW_SOURCE_DIR}/deps/glad/gl.h")
+
+set(INCLUDE_SRC ${INCLUDE_SRC} "vendor/glad/")
+add_compile_definitions(GLFW_INCLUDE_GLEXT)
 
 # Import GLEXT
 include_directories(vendor/opengl/api)
@@ -35,9 +37,7 @@ if(MSVC)
 endif()
 
 # Remove this because its dumb :)
-if(APPLE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
+set(CMAKE_BUILD_TYPE Debug)
 
 if(WIN32)
     add_compile_definitions(WIN32)
@@ -45,11 +45,14 @@ elseif(LINUX)
     add_compile_definitions(LINUX)
 elseif(APPLE)
     add_compile_definitions(MACOS)
-    add_compile_definitions(GL_SILENCE_DEPRECATION)
 endif()
 
 # Assign source files and target output
-set(DEMO_SRC src/main.cpp)
+set(DEMO_SRC
+    src/main.cpp
+    src/window.cpp
+    src/gfx.cpp
+)
 
 add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})
 add_dependencies(GameDemo glfw)
