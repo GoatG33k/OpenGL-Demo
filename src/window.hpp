@@ -4,8 +4,6 @@
 #include <GLFW/glfw3.h>
 #include <easylogging++.h>
 
-#include "gfx.hpp"
-
 namespace goat
 {
     class GameWindow

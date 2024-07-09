@@ -9,6 +9,9 @@ Makefile
 # Logs
 *.log
 
+# OS generated files
+**/.DS_Store
+
 # Dependencies
 vendor/**/*
 !vendor/.gitkeep

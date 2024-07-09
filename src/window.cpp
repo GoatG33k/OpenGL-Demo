@@ -1,4 +1,6 @@
 #include <chrono>
+
+#include "gfx.hpp"
 #include "window.hpp"
 
 using namespace std::chrono;

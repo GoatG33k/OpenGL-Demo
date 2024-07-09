@@ -1,31 +1,29 @@
 # Project details
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CXX_STANDARD 20)
-project(GameDemo VERSION 1.0 LANGUAGES CXX)
+project(GameDemo VERSION 1.0 LANGUAGES CXX C)
 
+include_directories(src)
+
+# Import OpenGL & GLAD
 find_package(OpenGL REQUIRED)
-include_directories(src src/gfx)
-include_directories(${OPENGL_INCLUDE_DIRS})
+include_directories(include/glad/include)
+set(INCLUDE_SRC ${INCLUDE_SRC} "include/glad/src/glad.c")
 
-# Import GLFW
 add_compile_definitions(GL_SILENCE_DEPRECATION)
 
+# Import GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-include_directories(vendor/glfw/deps)
+include_directories(vendor/glfw/include)
 add_subdirectory(vendor/glfw)
-
-set(INCLUDE_SRC ${INCLUDE_SRC} "vendor/glad/")
 add_compile_definitions(GLFW_INCLUDE_GLEXT)
 
 # Import GLEXT
 include_directories(vendor/opengl/api)
 set(INCLUDE_SRC ${INCLUDE_SRC} "vendor/opengl/api/GL/glext.h")
-
-# Import EGL-registry
-include_directories(vendor/egl/api)
 
 # Import easylogging++
 include_directories(vendor/easyloggingpp/src)
@@ -58,7 +56,7 @@ set(DEMO_SRC
 
 add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})
 add_dependencies(GameDemo glfw)
-target_link_libraries(GameDemo ${OPENGL_LIBRARIES} glfw)
+target_link_libraries(GameDemo PRIVATE ${OPENGL_LIBRARIES} OpenGL::GL glfw)
 
 # if( MSVC )
 # if(${CMAKE_VERSION} VERSION_LESS "3.6.0")

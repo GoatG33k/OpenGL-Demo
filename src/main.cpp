@@ -11,8 +11,7 @@
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <gfx.hpp>
@@ -36,7 +35,7 @@ inline void run_game()
     GameWindow *window = new GameWindow("Hello, World!");
 
     // Load GLAD
-    if (gladLoadGL(glfwGetProcAddress) == 0)
+    if (gladLoadGL() == 0)
         throw std::runtime_error("Failed to load OpenGL functions via GLAD");
 
     ShaderProgram shaderProg;
