@@ -18,6 +18,10 @@ namespace goat
         {
         case GLFW_RELEASE:
             LOG(DEBUG) << "Key released: " << key;
+            if (key == GLFW_KEY_D)
+            {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
             break;
 
         case GLFW_PRESS:
@@ -26,6 +30,10 @@ namespace goat
             if (key == GLFW_KEY_ESCAPE)
             {
                 glfwSetWindowShouldClose(window, true);
+            }
+            else if (key == GLFW_KEY_D)
+            {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }
             break;
         }

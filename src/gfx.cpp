@@ -18,6 +18,7 @@ namespace goat::gfx
             throw runtime_error("Shader reference is NULL");
 
         LOG(DEBUG) << "Attaching shader " << shader->filePath << " to program " << program;
+        shader->program = this->program;
         glAttachShader(program, shaderRef);
     }
 
@@ -83,37 +84,112 @@ namespace goat::gfx
         }
     }
 
+    void Shader::setBool(const string &name, bool value) const
+    {
+        assert(this->program > 0);
+        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+        glUniform1i(uniformAddr, (int)value);
+    }
+
+    void Shader::setInt(const string &name, int value) const
+    {
+        assert(this->program > 0);
+        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+        glUniform1i(uniformAddr, value);
+    }
+
+    void Shader::setFloat(const string &name, float value) const
+    {
+        assert(this->program > 0);
+        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+        glUniform1f(uniformAddr, value);
+    }
+
+    template <typename T>
+    void Shader::setVector(const string &name, vector<T> value) const
+    {
+        assert(this->program > 0);
+        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+        size_t count = value.size();
+        const T *data = &value[0];
+
+        assert(count > 0 && count <= 4);
+        if (count == 1)
+            glUniform1fv(uniformAddr, count, data);
+        else if (count == 2)
+            glUniform2fv(uniformAddr, count, data);
+        else if (count == 3)
+            glUniform3fv(uniformAddr, count, data);
+        else if (count == 4)
+            glUniform4fv(uniformAddr, count, data);
+    }
+
     //
     // VBO
     //
-
-    VBO::VBO(
+    template <>
+    VBO<float>::VBO(
         GLenum bufferType,
-        const vector<float> &points,
         GLenum drawType) : bufferType(bufferType), drawType(drawType)
     {
         assert(bufferType == GL_ARRAY_BUFFER || bufferType == GL_ELEMENT_ARRAY_BUFFER);
         assert(drawType == GL_STATIC_DRAW || drawType == GL_DYNAMIC_DRAW);
-        // assert(dims > 0 && dims <= 4);
-
         glGenVertexArrays(1, &this->vao);
         glGenBuffers(1, &this->vbo);
-        glBindVertexArray(this->vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), &points[0], drawType);
-
-        // Set index 0
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
     }
 
-    VBO::~VBO()
+    template <>
+    VBO<float>::~VBO()
     {
         glDeleteVertexArrays(1, &this->vao);
         glDeleteBuffers(1, &this->vbo);
+    }
+
+    template <>
+    void VBO<float>::bufferData(const vector<float> &points)
+    {
+        vbo_buffer_data(this->vao, this->vbo, sizeof(float), points, this->bufferType, this->drawType);
+    }
+
+    template <>
+    void VBO<int, GL_INT>::bufferData(const vector<int> &points)
+    {
+        vbo_buffer_data(this->vao, this->vbo, sizeof(int), points, this->bufferType, this->drawType);
+    }
+
+    template <>
+    void VBO<float>::setAttributePointer(unsigned int index,
+                                         unsigned int dimensions,
+                                         size_t stride, size_t offset)
+    {
+        assert(4 <= dimensions >= 0);
+        assert(stride > 0 && offset >= 0);
+        assert(offset < stride);
+        vbo_set_attr_pointer(sizeof(float), GL_FLOAT, dimensions, index, stride, offset);
+    }
+
+    template <>
+    void VBO<int, GL_INT>::setAttributePointer(unsigned int index, unsigned int dimensions,
+                                               size_t stride, size_t offset)
+    {
+        assert(4 <= dimensions >= 0);
+        assert(stride > 0 && offset >= 0);
+        assert(offset < stride);
+        vbo_set_attr_pointer(sizeof(int), GL_INT, dimensions, index, stride, offset);
+    }
+
+    //
+    // EBO
+    //
+    EBO::EBO(const vector<unsigned int> &indices, GLenum drawType)
+    {
+        glGenBuffers(1, &this->ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], drawType);
+    }
+
+    EBO::~EBO()
+    {
+        glDeleteBuffers(1, &this->ebo);
     }
 }
