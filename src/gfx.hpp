@@ -169,7 +169,7 @@ class VBO {
     GLuint ebo;
 
    public:
-    VBO<>(BufferType bufferType, DrawType drawType, DataType dataType,
+    VBO(BufferType bufferType, DrawType drawType, DataType dataType,
           const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
         : dataType(dataType), drawType(drawType), bufferType(bufferType), ebo(0U) {
         glGenVertexArrays(1, &this->vao);

@@ -36,7 +36,7 @@ include_directories(vendor/stb)
 include_directories(vendor/opengl/api)
 
 # Include ImGUI
-add_library(ImGUI
+set(IMGUI_SRC 
     "vendor/imgui/imgui.cpp"
     "vendor/imgui/imgui_demo.cpp"
     "vendor/imgui/imgui_draw.cpp"
@@ -44,9 +44,12 @@ add_library(ImGUI
     "vendor/imgui/imgui_tables.cpp"
     "vendor/imgui/misc/cpp/imgui_stdlib.cpp"
     "vendor/imgui/backends/imgui_impl_glfw.cpp"
-    "vendor/imgui/backends/imgui_impl_metal.mm"
     "vendor/imgui/backends/imgui_impl_opengl3.cpp"
 )
+if (APPLE)
+    set(IMGUI_SRC ${IMGUI_SRC} "vendor/imgui/backends/imgui_impl_metal.mm")
+endif ()
+add_library(ImGUI ${IMGUI_SRC})
 include_directories(vendor/imgui vendor/imgui/backends)
 
 # Import easylogging++
@@ -85,7 +88,11 @@ target_link_libraries(GameDemo
     PRIVATE easyloggingpp
 )
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+if (CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wextra")
+endif ()
+
 set(DEBUG_FLAGS "-g")
 set(RELEASE_FLAGS "-O3")
 target_compile_options(GameDemo PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_FLAGS}>")
