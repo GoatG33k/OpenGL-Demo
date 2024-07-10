@@ -11,10 +11,6 @@ Makefile
 # OS generated files
 **/.DS_Store
 
-# Dependencies
-vendor/**/*
-!vendor/.gitkeep
-
 # Editor files
 .vs/**
 .vscode/**
