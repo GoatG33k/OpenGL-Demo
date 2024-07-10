@@ -6,6 +6,7 @@
 #include <any>
 #include <numeric>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 // clang-format off
@@ -59,6 +60,7 @@ class Shader {
     }
     void setBool(const std::string name, bool value) const;
     void setInt(const std::string name, int value) const;
+    void setInt(const std::string, unsigned int value) const;
     void setFloat(const std::string name, float value) const;
 
     template <typename T>
@@ -69,15 +71,38 @@ class Shader {
 
         auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
         const T *data = &value[0];
-
-        if (count == 1)
-            glUniform1fv(uniformAddr, count, data);
-        else if (count == 2)
-            glUniform2fv(uniformAddr, count, data);
-        else if (count == 3)
-            glUniform3fv(uniformAddr, count, data);
-        else if (count == 4)
-            glUniform4fv(uniformAddr, count, data);
+        if constexpr (std::is_floating_point<T>::value) {
+            if (count == 1)
+                glUniform1fv(uniformAddr, count, data);
+            else if (count == 2)
+                glUniform2fv(uniformAddr, count, data);
+            else if (count == 3)
+                glUniform3fv(uniformAddr, count, data);
+            else if (count == 4)
+                glUniform4fv(uniformAddr, count, data);
+        } else if (std::is_unsigned<T>::value && std::is_integral<T>::value) {
+            if (count == 1)
+                glUniform1uiv(uniformAddr, count, data);
+            else if (count == 2)
+                glUniform2uiv(uniformAddr, count, data);
+            else if (count == 3)
+                glUniform3uiv(uniformAddr, count, data);
+            else if (count == 4)
+                glUniform4uiv(uniformAddr, count, data);
+        } else if (std::is_integral<T>::value) {
+            if (count == 1)
+                glUniform1iv(uniformAddr, count, data);
+            else if (count == 2)
+                glUniform2iv(uniformAddr, count, data);
+            else if (count == 3)
+                glUniform3iv(uniformAddr, count, data);
+            else if (count == 4)
+                glUniform4iv(uniformAddr, count, data);
+        } else {
+            std::stringstream err;
+            err << "Unsupported data type: " << typeid(T).name();
+            throw std::runtime_error(err.str());
+        }
     }
 };
 

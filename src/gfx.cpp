@@ -91,6 +91,12 @@ void Shader::setInt(const string name, int value) const {
     glUniform1i(uniformAddr, value);
 }
 
+void Shader::setInt(const string name, unsigned int value) const {
+    assert(this->program > 0);
+    auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+    glUniform1ui(uniformAddr, value);
+}
+
 void Shader::setFloat(const string name, float value) const {
     assert(this->program > 0);
     auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
