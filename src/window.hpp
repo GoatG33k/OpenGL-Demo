@@ -1,31 +1,30 @@
 #pragma once
 
-#include <string>
 #include <GLFW/glfw3.h>
 #include <easylogging++.h>
 
-namespace goat
-{
-    class GameWindow
-    {
-    protected:
-        unsigned int width;
-        unsigned int height;
-        GLFWwindow *window;
+#include <string>
 
-        static inline void set_framebuffer_size(GLFWwindow *window, int _width, int _height);
-        static inline void handle_keypress(GLFWwindow *window, int key, int scancode, int action, int mods);
-        static inline void handle_error(int error, const char *description);
-        static inline void log_driver_info();
+#include "constants.hpp"
 
-    public:
-        GameWindow(
-            std::string window_title = "GameWindow",
-            unsigned int _width = goat::gfx::DEFAULT_SCREEN_WIDTH,
-            unsigned int _height = goat::gfx::DEFAULT_SCREEN_HEIGHT);
-        ~GameWindow();
+namespace goat {
+class GameWindow {
+   protected:
+    unsigned int width;
+    unsigned int height;
+    GLFWwindow *window;
 
-        void loop(std::function<void()> tick_fn);
-        GLFWwindow *get_window();
-    };
-}
+    static inline void set_framebuffer_size(GLFWwindow *window, int _width, int _height);
+    static inline void handle_keypress(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static inline void handle_error(int error, const char *description);
+    static inline void log_driver_info();
+
+   public:
+    ~GameWindow();
+    GameWindow(std::string window_title = "GameWindow", unsigned int _width = goat::gfx::DEFAULT_SCREEN_WIDTH,
+               unsigned int _height = goat::gfx::DEFAULT_SCREEN_HEIGHT);
+
+    void loop(std::function<void()> tick_fn);
+    GLFWwindow *get_window();
+};
+}  // namespace goat
