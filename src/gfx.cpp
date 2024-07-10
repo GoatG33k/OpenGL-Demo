@@ -1,10 +1,12 @@
 #include <fstream>
+#include <chrono>
 #include <assert.h>
 #include <easylogging++.h>
 
 #include "gfx.hpp"
 
 using namespace std;
+using namespace std::chrono;
 
 namespace goat::gfx
 {
@@ -38,33 +40,30 @@ namespace goat::gfx
         if (!success)
         {
             glGetProgramInfoLog(program, 512, NULL, infoLog);
-            LOG(ERROR) << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-                       << infoLog;
+            stringstream err;
+            err << "Failed to link shader program: " << infoLog;
+            LOG(ERROR) << err.str();
+            throw runtime_error(err.str());
         }
 
         linked = true;
-        LOG(INFO) << "Linked ShaderProgram: " << reinterpret_cast<void *>(program);
-        return (bool)success;
+        LOG(INFO) << "Linked ShaderProgram: " << &program;
+        return !!success;
     }
 
     //
     // Shader
     //
-    Shader::Shader(const string filePath, GLenum shaderType) : filePath(filePath), type(shaderType)
+    Shader::Shader(const string filePath, ShaderType shaderType) : filePath(filePath), type(shaderType)
     {
-        if (shaderType != GL_VERTEX_SHADER && shaderType != GL_FRAGMENT_SHADER)
-            throw runtime_error("Invalid shader type specified. Must be either GL_VERTEX_SHADER or GL_FRAGMENT_SHADER.");
 
-        shader = glCreateShader(shaderType);
-
-        LOG(INFO) << " [shader] [" << filePath << "] created #" << shader;
         ifstream ifs(filePath);
         string _shaderSource((istreambuf_iterator<char>(ifs)),
                              (istreambuf_iterator<char>()));
 
+        auto startTime = high_resolution_clock::now();
+        shader = glCreateShader((GLenum)shaderType);
         shaderSource = (GLchar *)_shaderSource.c_str();
-        LOG(DEBUG) << "[shader] [" << filePath << "] size is " << strlen(shaderSource) << " bytes";
-
         glShaderSource(shader, 1, &shaderSource, NULL);
         glCompileShader(shader);
 
@@ -74,14 +73,16 @@ namespace goat::gfx
         if (!success)
         {
             glGetShaderInfoLog(shader, 512, NULL, infoLog);
-            LOG(ERROR) << "ERROR::SHADER::VERTEX::COMPILATION_FAILED - "
-                       << infoLog;
-            throw runtime_error("Failed to compile shader: " + filePath);
+            stringstream err;
+            err << "[shader] [" << filePath << "] failed to compile: " << infoLog;
+
+            LOG(ERROR) << err.str();
+            throw runtime_error(err.str());
         }
-        else
-        {
-            LOG(DEBUG) << "[shader] [" << filePath << "] compiled!";
-        }
+
+        auto endTime = high_resolution_clock::now();
+        LOG(INFO) << "[shader] [" << filePath << "] compiled " << strlen(shaderSource)
+                  << " bytes in " << duration_cast<milliseconds>(endTime - startTime).count() << "ms";
     }
 
     void Shader::setBool(const string &name, bool value) const
@@ -129,11 +130,10 @@ namespace goat::gfx
     //
     template <>
     VBO<float>::VBO(
-        GLenum bufferType,
-        GLenum drawType) : bufferType(bufferType), drawType(drawType)
+        BufferType bufferType,
+        DrawType drawType,
+        DataType dataType) : bufferType(bufferType), drawType(drawType), dataType(dataType)
     {
-        assert(bufferType == GL_ARRAY_BUFFER || bufferType == GL_ELEMENT_ARRAY_BUFFER);
-        assert(drawType == GL_STATIC_DRAW || drawType == GL_DYNAMIC_DRAW);
         glGenVertexArrays(1, &this->vao);
         glGenBuffers(1, &this->vbo);
     }
@@ -145,47 +145,14 @@ namespace goat::gfx
         glDeleteBuffers(1, &this->vbo);
     }
 
-    template <>
-    void VBO<float>::bufferData(const vector<float> &points)
-    {
-        vbo_buffer_data(this->vao, this->vbo, sizeof(float), points, this->bufferType, this->drawType);
-    }
-
-    template <>
-    void VBO<int, GL_INT>::bufferData(const vector<int> &points)
-    {
-        vbo_buffer_data(this->vao, this->vbo, sizeof(int), points, this->bufferType, this->drawType);
-    }
-
-    template <>
-    void VBO<float>::setAttributePointer(unsigned int index,
-                                         unsigned int dimensions,
-                                         size_t stride, size_t offset)
-    {
-        assert(4 <= dimensions >= 0);
-        assert(stride > 0 && offset >= 0);
-        assert(offset < stride);
-        vbo_set_attr_pointer(sizeof(float), GL_FLOAT, dimensions, index, stride, offset);
-    }
-
-    template <>
-    void VBO<int, GL_INT>::setAttributePointer(unsigned int index, unsigned int dimensions,
-                                               size_t stride, size_t offset)
-    {
-        assert(4 <= dimensions >= 0);
-        assert(stride > 0 && offset >= 0);
-        assert(offset < stride);
-        vbo_set_attr_pointer(sizeof(int), GL_INT, dimensions, index, stride, offset);
-    }
-
     //
     // EBO
     //
-    EBO::EBO(const vector<unsigned int> &indices, GLenum drawType)
+    EBO::EBO(const vector<unsigned int> &indices, DrawType drawType)
     {
         glGenBuffers(1, &this->ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], drawType);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], (GLenum)drawType);
     }
 
     EBO::~EBO()

@@ -49,36 +49,30 @@ inline void run_game()
     if (gladLoadGL() == 0)
         throw std::runtime_error("Failed to load OpenGL functions via GLAD");
 
-    ShaderProgram shaderProg;
-    auto vertexShader = new Shader("shaders/basic.vert", GL_VERTEX_SHADER);
-    auto fragmentShader = new Shader("shaders/basic.frag", GL_FRAGMENT_SHADER);
-    shaderProg.attachShader(vertexShader);
-    shaderProg.attachShader(fragmentShader);
+    auto shaderProg = new ShaderProgram();
+    auto vertexShader = new Shader("shaders/basic.vert", ShaderType::VERTEX);
+    auto fragmentShader = new Shader("shaders/basic.frag", ShaderType::FRAGMENT);
+    shaderProg->attachShader(vertexShader);
+    shaderProg->attachShader(fragmentShader);
 
-    VBO<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW);
-    vbo.bufferData(vertices);
-    vbo.setAttributePointer(0, 3, sizeof(float) * 6, 0);
-    vbo.setAttributePointer(1, 3, sizeof(float) * 6, 3 * sizeof(float));
+    // Let our fancy code calculate the attribute pointer bounds, stride, and offset magically!
+    auto vbo = new VBO<float>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT);
+    vbo->addAttributeBound(0, 3);
+    vbo->addAttributeBound(1, 3);
+    vbo->applyAttributeBounds(vertices);
 
-    // EBO ebo(indices, GL_STATIC_DRAW);
+    auto ctx = new RenderContext();
+    ctx->add(vbo);
+    ctx->add(shaderProg);
 
-    shaderProg.link();
-
-    window->loop([&vbo, &shaderProg]()
+    shaderProg->link();
+    window->loop([&ctx, &vbo, &shaderProg]()
                  {
-                     shaderProg.use();
-
-                     //  float timeValue = glfwGetTime();
-                     //  float blueValue = sin(timeValue) / 2.0f + 0.5f;
-                     //  int colorUniformLocation = shaderProg.getUniform("color");
-                     //  glUniform4f(colorUniformLocation, 1.0f, 0.0f, blueValue, 1.0f);
-
-                     vbo.use();
+                     ctx->render();
+                     shaderProg->use();
+                     vbo->use();
                      glDrawArrays(GL_TRIANGLES, 0, 3);
-                     //  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                     glBindVertexArray(0);
-                     // glDrawArrays(GL_TRIANGLES, 0, 3);
-                 });
+                     glBindVertexArray(0); });
 }
 
 int main(int argc, char *argv[])

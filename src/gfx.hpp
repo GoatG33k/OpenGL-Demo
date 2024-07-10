@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <numeric>
 #include <assert.h>
 
 #include <easylogging++.h>
@@ -15,6 +16,31 @@ namespace goat::gfx
     static const int DEFAULT_SCREEN_WIDTH = 1600;
     static const int DEFAULT_SCREEN_HEIGHT = 900;
 
+    // Enums
+    enum class ShaderType
+    {
+        VERTEX = GL_VERTEX_SHADER,
+        FRAGMENT = GL_FRAGMENT_SHADER,
+    };
+
+    enum class BufferType
+    {
+        ARRAY = GL_ARRAY_BUFFER,
+        ELEMENT = GL_ELEMENT_ARRAY_BUFFER,
+    };
+    enum class DrawType
+    {
+        STATIC = GL_STATIC_DRAW,
+        DYNAMIC = GL_DYNAMIC_DRAW,
+    };
+
+    enum class DataType
+    {
+        FLOAT = GL_FLOAT,
+        INT = GL_INT,
+        UNSIGNED_INT = GL_UNSIGNED_INT,
+    };
+
     //
     // Shader
     //
@@ -24,14 +50,14 @@ namespace goat::gfx
 
     private:
         GLchar *shaderSource;
-        GLenum type;
+        ShaderType type;
         GLuint shader;
         GLuint program;
 
     public:
         std::string filePath;
 
-        Shader(const std::string filePath, GLenum shaderType);
+        Shader(const std::string filePath, ShaderType shaderType);
         ~Shader()
         {
             if (shader != 0)
@@ -71,6 +97,7 @@ namespace goat::gfx
         inline void use() { glUseProgram(this->program); }
         inline int getUniform(char *name) { return glGetUniformLocation(this->program, name); }
 
+        constexpr bool isLinked() { return this->linked; }
         void attachShader(Shader *shader);
         bool link();
     };
@@ -82,26 +109,23 @@ namespace goat::gfx
     inline void vbo_buffer_data(GLuint vao, GLuint vbo,
                                 size_t entry_size,
                                 const std::vector<T> &points,
-                                GLenum bufferType,
-                                GLenum drawType)
+                                BufferType bufferType,
+                                DrawType drawType)
     {
-        assert(bufferType == GL_ARRAY_BUFFER || bufferType == GL_ELEMENT_ARRAY_BUFFER);
-        assert(drawType == GL_STATIC_DRAW || drawType == GL_DYNAMIC_DRAW);
-
         glBindVertexArray(vao);
-        glBindBuffer(bufferType, vbo);
-        glBufferData(bufferType, points.size() * entry_size, &points[0], drawType);
+        glBindBuffer((GLenum)bufferType, vbo);
+        glBufferData((GLenum)bufferType, points.size() * entry_size, &points[0], (GLenum)drawType);
     }
 
-    inline void vbo_set_attr_pointer(size_t dataSize, GLenum dataType,
+    inline void vbo_set_attr_pointer(size_t dataSize, DataType dataType,
                                      unsigned int dimensions, unsigned int index,
                                      size_t stride, size_t offset = 0)
     {
         assert(dataSize > 0);
         assert(index >= 0 && index <= 15); // technically incorrect
-        assert(offset < stride);
+        assert(offset >= 0 && offset < stride);
 
-        glVertexAttribPointer(index, dimensions, dataType, GL_FALSE, stride, (void *)offset);
+        glVertexAttribPointer(index, dimensions, (GLenum)dataType, GL_FALSE, stride, (void *)offset);
         glEnableVertexAttribArray(index);
     }
 
@@ -112,34 +136,40 @@ namespace goat::gfx
         unsigned int entries;
     };
 
-    template <typename T, GLenum V = GL_FLOAT>
+    template <typename T = float>
     class VBO
     {
     private:
         std::vector<VAOBound> bounds = {};
-        GLenum drawType;
-        GLenum bufferType;
+        DataType dataType;
+        DrawType drawType;
+        BufferType bufferType;
         GLuint vao;
         GLuint vbo;
 
     public:
         ~VBO();
-        VBO<>(GLenum bufferType, GLenum drawType);
+        VBO<>(BufferType bufferType, DrawType drawType, DataType dataType);
         inline void use() { glBindVertexArray(this->vao); }
-        inline void addAttributeBound(unsigned int index, size_t data_size, unsigned int entries)
+        inline void addAttributeBound(unsigned int index, unsigned int entries, size_t item_size = sizeof(T))
         {
             for (auto bound : this->bounds)
                 if (bound.index == index)
                     throw std::runtime_error("Attribute index already bound");
-            this->bounds.push_back({index, data_size, entries});
+            this->bounds.push_back({index, item_size, entries});
         }
-        inline void applyAttributeBounds()
-        {
 
-            size_t stride = accumulate(
-                this->bounds.begin(), this->bounds.end(), 0,
+        inline void applyAttributeBounds(const std::vector<T> &points)
+        {
+            if (this->bounds.size() == 0)
+                throw std::runtime_error("No attribute bounds set");
+
+            size_t stride = std::accumulate(
+                this->bounds.begin(), this->bounds.end(), 0UL,
                 [](size_t acc, VAOBound bound)
                 { return acc + bound.data_size * bound.entries; });
+
+            vbo_buffer_data(this->vao, this->vbo, sizeof(T), points, this->bufferType, this->drawType);
 
             size_t offset = 0;
             for (auto bound : this->bounds)
@@ -147,13 +177,10 @@ namespace goat::gfx
                 LOG(INFO) << "Applying attribute bound (i=" << bound.index
                           << ") (stride=" << (bound.data_size * bound.entries)
                           << ") (offset=" << offset << ")";
-                vbo_set_attr_pointer(bound.data_size, V, bound.entries, bound.index, stride, offset);
+                vbo_set_attr_pointer(bound.data_size, this->dataType, bound.entries, bound.index, stride, offset);
                 offset += bound.entries * bound.data_size;
             }
         }
-
-        void setAttributePointer(unsigned int index, unsigned int dimensions, size_t stride, size_t offset = 0);
-        void bufferData(const std::vector<T> &points);
     };
 
     // EBO
@@ -164,6 +191,46 @@ namespace goat::gfx
 
     public:
         ~EBO();
-        EBO(const std::vector<unsigned int> &indices, GLenum drawType);
+        EBO(const std::vector<unsigned int> &indices, DrawType drawType);
+    };
+
+    //
+    // RenderContext
+    //
+
+    /** @brief A RenderContext is a collection of VBOs and Shaders that are used to render a scene.  */
+    template <typename T = float>
+    class RenderContext
+    {
+    private:
+        std::vector<VBO<T> *> vbos;
+        std::vector<ShaderProgram *> shaders;
+
+    public:
+        RenderContext(){};
+        ~RenderContext()
+        {
+            for (auto vbo : vbos)
+            {
+                delete vbo;
+            }
+        }
+
+        inline void add(VBO<T> *vbo)
+        {
+            vbos.push_back(vbo);
+        }
+
+        inline void add(ShaderProgram *shader)
+        {
+            if (!shader->isLinked())
+                shader->link();
+            shaders.push_back(shader);
+        }
+
+        inline void render()
+        {
+            // TODO: figure out how to draw random functions quickly
+        }
     };
 }
