@@ -25,10 +25,8 @@ void ShaderProgram::attachShader(Shader *shader) {
 }
 
 bool ShaderProgram::link() {
-    if (linked) {
-        LOG(WARNING) << "Attempted to link a ShaderProgram that is already linked: " << program;
-        return true;
-    }
+    if (linked)
+        throw runtime_error("ShaderProgram is already linked");
 
     int success;
     char infoLog[512];
@@ -51,7 +49,7 @@ bool ShaderProgram::link() {
 //
 // Shader
 //
-Shader::Shader(const string filePath, ShaderType shaderType) : path(std::move(filePath)), type(shaderType) {
+Shader::Shader(const string filePath, ShaderType shaderType) : type(shaderType), path(std::move(filePath)) {
     ifstream ifs(filePath);
     string _shaderSource((istreambuf_iterator<char>(ifs)), (istreambuf_iterator<char>()));
 

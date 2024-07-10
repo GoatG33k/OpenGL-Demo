@@ -13,6 +13,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
+#include "texture.hpp"
 
 namespace goat::gfx {
 
@@ -111,13 +112,12 @@ class Shader {
 //
 class ShaderProgram {
    private:
-    bool linked = false;
+    bool linked;
     GLuint program;
     std::vector<Shader *> bound;
 
    public:
-    ShaderProgram() {
-        this->program = glCreateProgram();
+    ShaderProgram() : linked(false), program(glCreateProgram()) {
     }
     inline ~ShaderProgram() {
         for (auto shader : this->bound)
@@ -151,16 +151,6 @@ inline void vbo_buffer_data(GLuint vao, GLuint vbo, size_t entry_size, const std
     glBufferData((GLenum)bufferType, points.size() * entry_size, &points[0], (GLenum)drawType);
 }
 
-inline void vbo_set_attr_pointer(size_t dataSize, DataType dataType, unsigned int dimensions, unsigned int index,
-                                 size_t stride, size_t offset = 0) {
-    assert(dataSize > 0);
-    assert(index >= 0 && index <= 15);  // technically incorrect
-    assert(offset >= 0 && offset < stride);
-
-    glVertexAttribPointer(index, dimensions, (GLenum)dataType, GL_FALSE, stride, (void *)offset);
-    glEnableVertexAttribArray(index);
-}
-
 struct VAOBound {
     GLuint index;
     size_t data_size;
@@ -176,20 +166,38 @@ class VBO {
     BufferType bufferType;
     GLuint vao;
     GLuint vbo;
+    GLuint ebo;
 
    public:
-    VBO<>(BufferType bufferType, DrawType drawType, DataType dataType)
-        : bufferType(bufferType), drawType(drawType), dataType(dataType) {
+    VBO<>(BufferType bufferType, DrawType drawType, DataType dataType,
+          const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
+        : dataType(dataType), drawType(drawType), bufferType(bufferType), ebo(0U) {
         glGenVertexArrays(1, &this->vao);
         glGenBuffers(1, &this->vbo);
+
+        if (indices.size() > 0) {
+            LOG(DEBUG) << "Creating element buffer for VBO " << &this->vbo;
+
+            glGenBuffers(1, &this->ebo);
+            glBindVertexArray(this->vao);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        }
     }
     ~VBO() {
         glDeleteVertexArrays(1, &this->vao);
         glDeleteBuffers(1, &this->vbo);
+        if (this->ebo > 0)
+            glDeleteBuffers(1, &this->ebo);
     }
+
     inline void use() {
+        if (this->bounds.size() == 0)
+            throw std::runtime_error("No attribute bounds set");
+
         glBindVertexArray(this->vao);
     }
+
     inline void addAttributeBound(unsigned int index, unsigned int entries, size_t item_size = sizeof(T)) {
         for (auto bound : this->bounds)
             if (bound.index == index)
@@ -211,7 +219,9 @@ class VBO {
         for (auto bound : this->bounds) {
             LOG(INFO) << "Applying attribute bound (i=" << bound.index
                       << ") (stride=" << (bound.data_size * bound.entries) << ") (offset=" << offset << ")";
-            vbo_set_attr_pointer(bound.data_size, this->dataType, bound.entries, bound.index, stride, offset);
+            // vbo_set_attr_pointer(this->dataType, bound.entries, bound.index, stride, offset);
+            glVertexAttribPointer(bound.index, bound.entries, (GLenum)this->dataType, GL_FALSE, stride, (void *)offset);
+            glEnableVertexAttribArray(bound.index);
             offset += bound.entries * bound.data_size;
         }
     }
@@ -236,25 +246,31 @@ class EBO {
 template <typename T = float>
 class RenderContext {
    private:
+    unsigned int texture_index = 0;
     std::vector<VBO<T> *> vbos;
     std::vector<ShaderProgram *> shaders;
+    std::vector<Texture *> textures;
 
    public:
     RenderContext(){};
     ~RenderContext() {
-        for (auto vbo : vbos) {
+        for (auto vbo : this->vbos) {
             delete vbo;
         }
     }
 
     inline void add(VBO<T> *vbo) {
-        vbos.push_back(vbo);
+        this->vbos.push_back(vbo);
     }
 
     inline void add(ShaderProgram *shader) {
         if (!shader->isLinked())
             shader->link();
-        shaders.push_back(shader);
+        this->shaders.push_back(shader);
+    }
+
+    inline void add(Texture *texture) {
+        this->textures.push_back(texture);
     }
 
     inline void render() {

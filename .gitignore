@@ -4,11 +4,9 @@ out/**/*
 CMakeFiles/**
 CMakeCache.txt
 cmake_install.cmake
+*.a
 GameDemo
 Makefile
-
-# Logs
-*.log
 
 # OS generated files
 **/.DS_Store
@@ -20,3 +18,7 @@ vendor/**/*
 # Editor files
 .vs/**
 .vscode/**
+
+# Temporary files
+*.log
+imgui.ini

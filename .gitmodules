@@ -7,3 +7,9 @@
 [submodule "vendor/easyloggingpp"]
 	path = vendor/easyloggingpp
 	url = https://github.com/abumq/easyloggingpp.git
+[submodule "vendor/stb"]
+	path = vendor/stb
+	url = https://github.com/nothings/stb.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/ocornut/imgui.git
