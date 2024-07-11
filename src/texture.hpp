@@ -1,11 +1,10 @@
 #pragma once
 
 #include <easylogging++.h>
-#include <glad/glad.h>
+#include <glad/gl.h>
 
+#include <gli/gli.hpp>
 #include <string>
-
-#include "stb_image.h"
 
 namespace goat::gfx {
 

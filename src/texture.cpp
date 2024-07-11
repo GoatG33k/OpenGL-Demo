@@ -1,41 +1,81 @@
 #include "texture.hpp"
 
+#include <GLFW/glfw3.h>
+
 #include <string>
 
 namespace goat::gfx {
-Texture::Texture(std::string _path) : path(std::move(_path)) {
-    stbi_set_flip_vertically_on_load(true);
+Texture::Texture(std::string path) : path(path), handle(0U) {
+    gli::texture texture = gli::load(path);
+    assert(!texture.empty());
 
-    int width, height, channels;
-    unsigned char* imageData = stbi_load(path.c_str(), &width, &height, &channels, 0);
+    gli::gl GL(gli::gl::PROFILE_GL33);
+    gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
+    GLenum target = GL.translate(texture.target());
 
-    if (imageData) {
-        glGenTextures(1, &this->handle);
-        glBindTexture(GL_TEXTURE_2D, this->handle);
+    glGenTextures(1, &this->handle);
+    glBindTexture(target, this->handle);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
 
-        glTexParameteri(GL_ALPHA, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_ALPHA, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gli::tvec3<GLsizei> const extent(texture.extent());
+    GLsizei const faceTotal = static_cast<GLsizei>(texture.layers() * texture.faces());
 
-        GLenum format;
-        if (channels == 1)
-            format = GL_RED;
-        else if (channels == 3)
-            format = GL_RGB;
-        else if (channels == 4)
-            format = GL_RGBA;
-        else
-            throw std::runtime_error("Unsupported number of channels in texture");
+    bool texStorageAvailable = glfwExtensionSupported("GL_ARB_texture_storage");
+    LOG(INFO) << "GL_ARB_texture_storage: " << (texStorageAvailable ? "available" : "unavailable");
 
-        LOG(INFO) << "[texture] [" << path << "] read (" << width << "x" << height << "x" << channels << ")";
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        LOG(ERROR) << "Failed to read texture: " << path;
+    auto levels = static_cast<GLint>(texture.levels());
+    switch (texture.target()) {
+        case gli::TARGET_2D:
+        case gli::TARGET_CUBE:
+            glTexStorage2D(target, levels, format.Internal, extent.x, extent.y);
+            break;
+        case gli::TARGET_3D:
+        case gli::TARGET_CUBE_ARRAY:
+            glTexStorage3D(target, levels, format.Internal, extent.x, extent.y, extent.z);
+            break;
+        default:
+            assert(0);
+            break;
     }
 
-    stbi_image_free(imageData);
+    for (std::size_t Layer = 0; Layer < texture.layers(); ++Layer)
+        for (std::size_t Face = 0; Face < texture.faces(); ++Face)
+            for (std::size_t Level = 0; Level < texture.levels(); ++Level) {
+                GLsizei const LayerGL = static_cast<GLsizei>(Layer);
+                glm::tvec3<GLsizei> Extent(texture.extent(Level));
+                target = gli::is_target_cube(texture.target())
+                             ? static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face)
+                             : target;
+
+                switch (texture.target()) {
+                    case gli::TARGET_2D:
+                    case gli::TARGET_CUBE:
+                        if (gli::is_compressed(texture.format()))
+                            glCompressedTexSubImage2D(target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
+                                                      format.Internal, static_cast<GLsizei>(texture.size(Level)),
+                                                      texture.data(Layer, Face, Level));
+                        else
+                            glTexSubImage2D(target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
+                                            format.External, format.Type, texture.data(Layer, Face, Level));
+                        break;
+                    case gli::TARGET_3D:
+                    case gli::TARGET_CUBE_ARRAY:
+                        if (gli::is_compressed(texture.format()))
+                            glCompressedTexSubImage3D(target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
+                                                      Extent.z, format.Internal,
+                                                      static_cast<GLsizei>(texture.size(Level)),
+                                                      texture.data(Layer, Face, Level));
+                        else
+                            glTexSubImage3D(target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
+                                            texture.target() == gli::TARGET_3D ? Extent.z : LayerGL, format.External,
+                                            format.Type, texture.data(Layer, Face, Level));
+                        break;
+                    default:
+                        assert(0);
+                        break;
+                }
+            }
 }
 }  // namespace goat::gfx

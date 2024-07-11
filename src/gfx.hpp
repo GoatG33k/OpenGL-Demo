@@ -10,7 +10,7 @@
 #include <vector>
 
 // clang-format off
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 // clang-format on
 #include "texture.hpp"
@@ -65,14 +65,35 @@ class Shader {
     void setFloat(const std::string name, float value) const;
 
     template <typename T>
-    inline void setVector(const std::string &name, const std::vector<T> value) const {
+    inline void setMatrix(const std::string &name, T *value, size_t count) const {
         assert(this->program > 0);
-        size_t count = value.size();
         assert(count > 0 && count <= 4);
 
         auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
         const T *data = &value[0];
         if constexpr (std::is_floating_point<T>::value) {
+            if (count == 2)
+                glUniformMatrix2fv(uniformAddr, 1, GL_FALSE, data);
+            else if (count == 3)
+                glUniformMatrix3fv(uniformAddr, 1, GL_FALSE, data);
+            else if (count == 4)
+                glUniformMatrix4fv(uniformAddr, 1, GL_FALSE, data);
+        } else {
+            std::stringstream err;
+            err << "Unsupported data type: " << typeid(T).name();
+            throw std::runtime_error(err.str());
+        }
+    }
+
+    template <typename T>
+    inline void setVector(const std::string &name, T *value, size_t count) const {
+        assert(this->program > 0);
+        assert(count > 0 && count <= 4);
+
+        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
+        const T *data = &value[0];
+        if constexpr (std::is_floating_point<T>::value) {
+            LOG(DEBUG) << "Setting uniform vector" << count;
             if (count == 1)
                 glUniform1fv(uniformAddr, count, data);
             else if (count == 2)
@@ -170,7 +191,7 @@ class VBO {
 
    public:
     VBO(BufferType bufferType, DrawType drawType, DataType dataType,
-          const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
+        const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
         : dataType(dataType), drawType(drawType), bufferType(bufferType), ebo(0U) {
         glGenVertexArrays(1, &this->vao);
         glGenBuffers(1, &this->vbo);

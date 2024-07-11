@@ -12,12 +12,8 @@
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#undef STB_IMAGE_IMPLEMENTATION
-
 // clang-format off
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <constants.hpp>
@@ -33,23 +29,42 @@ INITIALIZE_EASYLOGGINGPP
 #include <imgui_impl_metal.h>
 #endif  // __APPLE__
 
+#include <gli/gli.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 using namespace std;
 using namespace std::chrono;
 using namespace goat;
 using namespace goat::gfx;
 
-// [4][4][4][4][4][4][4][4]
-// \-------/\-------/\----/
-//  pos[12]  rgb[12]  tex[8]
+// [4][4][4][4][4]
+// \-------/\----/
+//  pos[12]  tex[8]
 //
 const vector<float> vertices{
-    // positions          // colors           // texture coords
-    0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // top right
-    0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom left
-    -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // top left
+    -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,
+    0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -0.5f, -0.5f,
+    0.5f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,
+    1.0f,  1.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,
+    0.0f,  -0.5f, 0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,
+    0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f,
+    0.5f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f, -0.5f,
+    1.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  -0.5f, -0.5f, 0.5f,  0.0f,
+    0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,
+    0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  -0.5f,
+    0.5f,  -0.5f, 0.0f,  1.0f
+
 };
+
 const vector<unsigned int> indices{0, 1, 3, 1, 2, 3};
+const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0f, 5.0f, -15.0f),
+                                   glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
+                                   glm::vec3(2.4f, -0.4f, -3.5f),  glm::vec3(-1.7f, 3.0f, -7.5f),
+                                   glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
+                                   glm::vec3(1.5f, 0.2f, -1.5f),   glm::vec3(-1.3f, 1.0f, -1.5f)};
 
 inline void run_game() {
     glfwSetErrorCallback([](int error, const char *description) {
@@ -57,6 +72,14 @@ inline void run_game() {
     });
 
     unique_ptr<GameWindow> window = make_unique<GameWindow>("Hello, World!");
+
+    // Load GLAD
+    if (!gladLoadGL(glfwGetProcAddress))
+        throw std::runtime_error("Failed to load OpenGL functions via GLAD");
+
+    // Enable depth testing
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_2D);
 
     // ImGui
     IMGUI_CHECKVERSION();
@@ -66,10 +89,6 @@ inline void run_game() {
 
     ImGui_ImplGlfw_InitForOpenGL(window->get_window(), true);
     ImGui_ImplOpenGL3_Init();
-
-    // Load GLAD
-    if (gladLoadGL() == 0)
-        throw std::runtime_error("Failed to load OpenGL functions via GLAD");
 
     ShaderProgram shaderProg{};
     Shader vertexShader{"shaders/basic.vert", ShaderType::VERTEX};
@@ -81,8 +100,7 @@ inline void run_game() {
     // offset magically!
     auto vbo = new VBO<float>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
     vbo->addAttributeBound(0, 3);  // XYZ
-    vbo->addAttributeBound(1, 3);  // RGB
-    vbo->addAttributeBound(2, 2);  // TEX
+    vbo->addAttributeBound(1, 2);  // TEX
     vbo->applyAttributeBounds(vertices);
 
     RenderContext ctx{};
@@ -90,35 +108,66 @@ inline void run_game() {
     ctx.add(&shaderProg);
 
     // Textures!
-    // Texture tex{"textures/gaga.jpg"};
-    Texture happy{"textures/happy.png"};
-    // ctx.add(&tex);
+    Texture happy{"textures/gaga.dds"};
     ctx.add(&happy);
 
     shaderProg.use();
     fragmentShader.setInt("texture1", 0);
-    fragmentShader.setInt("texture2", 1);
 
-    window->loop([&vbo, &shaderProg, &happy, &ctx]() {
+    // Create camera
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+    glm::vec3 cameraRight = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), cameraDirection));
+    glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+
+    // Create 3D world space
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+    glm::mat4 projection;
+    projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
+
+    window->loop([&vertexShader, &model, &view, &projection, &vbo, &shaderProg, &happy, &ctx]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
         ctx.render();
+
+        // vertexShader.setMatrix("model", static_cast<float *>(glm::value_ptr(model)), 4);
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+
+        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        vertexShader.setMatrix("view", static_cast<float *>(glm::value_ptr(view)), 4);
+        vertexShader.setMatrix("projection", static_cast<float *>(glm::value_ptr(projection)), 4);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, happy.getID());
 
-        // glActiveTexture(GL_TEXTURE1);
-        // glBindTexture(GL_TEXTURE_2D, happy.getID());
-
         shaderProg.use();
-        vbo->use();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // glBindVertexArray(0);
+        for (auto i = 0; i < 10; i++) {
+            vbo->use();
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+
+            float angle = 1.0f * (i + 1);
+            model = glm::rotate(model, glm::radians((float)glfwGetTime() * angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            vertexShader.setMatrix("model", static_cast<float *>(glm::value_ptr(model)), 4);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glBindVertexArray(0);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     });

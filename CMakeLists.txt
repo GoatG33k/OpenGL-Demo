@@ -8,9 +8,32 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# if(APPLE)
-# enable_language(OBJCXX)
-# endif()
+# Hardening compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong -mbranch-protection=standard -fexceptions")
+
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-z,nodlopen -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    # message(STATUS "GCC compiler detected")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wtrampolines -Wbidi-chars=any")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-flex-arrays=3 -fstack-clash-protection")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -pie -fhardened")
+endif()
+
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    message(STATUS "x86_64 detected")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcf-protection=full")
+elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(arm)|(ARM)")
+    message(STATUS "ARM detected")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbranch-protection=standard")
+endif()
+
+if(CMAKE_BUILD_TYPE MATCHES "Release")
+    message(STATUS "Targeting Release build")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero")
+endif()
+
 include_directories(src)
 
 # Import OpenGL
@@ -19,7 +42,8 @@ include_directories(include/glad/include)
 add_compile_definitions(GL_SILENCE_DEPRECATION)
 
 # Import GLAD
-add_library(GLAD include/glad/src/glad.c)
+set(GLAD_SRC "include/glad/src/gl.c" "include/glad/src/vulkan.c")
+add_library(GLAD ${GLAD_SRC})
 target_link_libraries(GLAD OpenGL::GL)
 
 # Import glfw
@@ -32,11 +56,12 @@ add_subdirectory(vendor/glfw)
 add_compile_definitions(GLFW_INCLUDE_GLEXT)
 
 # Header-only dependencies
-include_directories(vendor/stb)
+include_directories(vendor/glm)
+include_directories(vendor/gli)
 include_directories(vendor/opengl/api)
 
 # Include ImGUI
-set(IMGUI_SRC 
+set(IMGUI_SRC
     "vendor/imgui/imgui.cpp"
     "vendor/imgui/imgui_demo.cpp"
     "vendor/imgui/imgui_draw.cpp"
@@ -46,9 +71,11 @@ set(IMGUI_SRC
     "vendor/imgui/backends/imgui_impl_glfw.cpp"
     "vendor/imgui/backends/imgui_impl_opengl3.cpp"
 )
-if (APPLE)
+
+if(APPLE)
     set(IMGUI_SRC ${IMGUI_SRC} "vendor/imgui/backends/imgui_impl_metal.mm")
-endif ()
+endif()
+
 add_library(ImGUI ${IMGUI_SRC})
 include_directories(vendor/imgui vendor/imgui/backends)
 
@@ -72,9 +99,12 @@ endif()
 
 # Assign source files and target output
 set(DEMO_SRC
+    src/texture.hpp
     src/texture.cpp
     src/main.cpp
+    src/window.hpp
     src/window.cpp
+    src/gfx.hpp
     src/gfx.cpp
 )
 
@@ -89,14 +119,18 @@ target_link_libraries(GameDemo
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wextra")
-endif ()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+endif()
 
 set(DEBUG_FLAGS "-g")
 set(RELEASE_FLAGS "-O3")
 target_compile_options(GameDemo PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_FLAGS}>")
 target_compile_options(GameDemo PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_FLAGS}>")
+
+message(NOTICE "CMAKE_BUILD_TYPE => ${CMAKE_BUILD_TYPE}")
+message(NOTICE "CMAKE_CXX_FLAGS  => ${CMAKE_CXX_FLAGS}")
 
 # if( MSVC )
 # if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
