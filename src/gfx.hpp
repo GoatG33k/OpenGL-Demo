@@ -164,20 +164,19 @@ class ShaderProgram {
 //
 // VBO
 //
-template <typename T>
-inline void vbo_buffer_data(GLuint vao, GLuint vbo, size_t entry_size, const std::vector<T> &points,
-                            BufferType bufferType, DrawType drawType) {
-    glBindVertexArray(vao);
-    glBindBuffer((GLenum)bufferType, vbo);
-    glBufferData((GLenum)bufferType, points.size() * entry_size, &points[0], (GLenum)drawType);
-}
-
 struct VAOBound {
     GLuint index;
     size_t data_size;
     unsigned int entries;
 };
 
+/**
+ * A Vertex Buffer Object (VBO) is a buffer that contains vertex data that can be used to
+ * render individual points into polygon(s).
+ *
+ * Providing the `&indices` parameter will create an Element Buffer Object (EBO) automatically,
+ * that can be used for rendering indexed vertices.
+ */
 template <typename T = float>
 class VBO {
    private:
@@ -190,21 +189,33 @@ class VBO {
     GLuint ebo;
 
    public:
+    /**
+     * Construct a new VBO object
+     *
+     * @param bufferType The type of buffer to create
+     * @param drawType The type of draw to use
+     * @param dataType The type of data to store
+     * @param indices The (optional) indices to use for the EBO
+     */
     VBO(BufferType bufferType, DrawType drawType, DataType dataType,
         const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
         : dataType(dataType), drawType(drawType), bufferType(bufferType), ebo(0U) {
+        assert(bufferType == BufferType::ARRAY || bufferType == BufferType::ELEMENT);
+        assert(dataType == DataType::FLOAT || dataType == DataType::INT || dataType == DataType::UNSIGNED_INT);
+        assert(drawType == DrawType::STATIC || drawType == DrawType::DYNAMIC);
+
         glGenVertexArrays(1, &this->vao);
         glGenBuffers(1, &this->vbo);
 
         if (indices.size() > 0) {
             LOG(DEBUG) << "Creating element buffer for VBO " << &this->vbo;
-
             glGenBuffers(1, &this->ebo);
             glBindVertexArray(this->vao);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
         }
     }
+
     ~VBO() {
         glDeleteVertexArrays(1, &this->vao);
         glDeleteBuffers(1, &this->vbo);
@@ -213,9 +224,7 @@ class VBO {
     }
 
     inline void use() {
-        if (this->bounds.size() == 0)
-            throw std::runtime_error("No attribute bounds set");
-
+        assert(this->bounds.size() > 0);
         glBindVertexArray(this->vao);
     }
 
@@ -234,7 +243,10 @@ class VBO {
             return acc + bound.data_size * bound.entries;
         });
 
-        vbo_buffer_data(this->vao, this->vbo, sizeof(T), points, this->bufferType, this->drawType);
+        glBindVertexArray(this->vao);
+        glBindBuffer(static_cast<GLenum>(this->bufferType), this->vbo);
+        glBufferData(static_cast<GLenum>(this->bufferType), points.size() * sizeof(T), &points[0],
+                     static_cast<GLenum>(drawType));
 
         size_t offset{};
         for (auto bound : this->bounds) {
@@ -248,22 +260,10 @@ class VBO {
     }
 };
 
-// EBO
-class EBO {
-   private:
-    GLuint ebo;
-
-   public:
-    ~EBO();
-    EBO(const std::vector<unsigned int> &indices, DrawType drawType);
-};
-
-//
-// RenderContext
-//
-
-/** @brief A RenderContext is a collection of VBOs and Shaders that are used to
- * render a scene.  */
+/**
+ * A RenderContext contains a collection of VBOs and Shaders that are used to render a scene.
+ * The RenderContext should be passed directly into the game loop.
+ */
 template <typename T = float>
 class RenderContext {
    private:

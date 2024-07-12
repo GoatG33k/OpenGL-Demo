@@ -101,16 +101,4 @@ void Shader::setFloat(const string name, float value) const {
     glUniform1f(uniformAddr, value);
 }
 
-//
-// EBO
-//
-EBO::EBO(const vector<unsigned int> &indices, DrawType drawType) {
-    glGenBuffers(1, &this->ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], (GLenum)drawType);
-}
-
-EBO::~EBO() {
-    glDeleteBuffers(1, &this->ebo);
-}
 }  // namespace goat::gfx

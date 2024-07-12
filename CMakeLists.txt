@@ -106,6 +106,7 @@ set(DEMO_SRC
     src/window.cpp
     src/gfx.hpp
     src/gfx.cpp
+    src/world.hpp
 )
 
 add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})

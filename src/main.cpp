@@ -20,6 +20,7 @@ INITIALIZE_EASYLOGGINGPP
 #include <gfx.hpp>
 #include <texture.hpp>
 #include <window.hpp>
+#include <world.hpp>
 // clang-format on
 
 #include <imgui.h>
@@ -72,6 +73,7 @@ inline void run_game() {
     });
 
     unique_ptr<GameWindow> window = make_unique<GameWindow>("Hello, World!");
+    window->createCamera();
 
     // Load GLAD
     if (!gladLoadGL(glfwGetProcAddress))
@@ -114,25 +116,16 @@ inline void run_game() {
     shaderProg.use();
     fragmentShader.setInt("texture1", 0);
 
-    // Create camera
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-    glm::vec3 cameraRight = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), cameraDirection));
-    glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-
     // Create 3D world space
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
 
-    window->loop([&vertexShader, &model, &view, &projection, &vbo, &shaderProg, &happy, &ctx]() {
+    auto camera = window->getCamera();
+
+    window->loop([&vertexShader, &model, &camera, &projection, &vbo, &shaderProg, &happy, &ctx]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -142,11 +135,11 @@ inline void run_game() {
 
         // vertexShader.setMatrix("model", static_cast<float *>(glm::value_ptr(model)), 4);
         const float radius = 10.0f;
+
         float camX = sin(glfwGetTime()) * radius;
         float camZ = cos(glfwGetTime()) * radius;
 
-        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-        vertexShader.setMatrix("view", static_cast<float *>(glm::value_ptr(view)), 4);
+        vertexShader.setMatrix("view", static_cast<float *>(glm::value_ptr(camera->view)), 4);
         vertexShader.setMatrix("projection", static_cast<float *>(glm::value_ptr(projection)), 4);
 
         glActiveTexture(GL_TEXTURE0);
