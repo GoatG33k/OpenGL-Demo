@@ -16,26 +16,26 @@ INITIALIZE_EASYLOGGINGPP
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "constants.hpp"
-#include "window.hpp"
-#include "camera.hpp"
-#include "texture.hpp"
-#include "gfx.hpp"
-// clang-format on
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #ifdef __APPLE__
 #include <imgui_impl_metal.h>
 #endif  // __APPLE__
+// clang-format on
+
+#include "camera.hpp"
+#include "constants.hpp"
+#include "gfx.hpp"
+#include "menu.hpp"
+#include "texture.hpp"
+#include "window.hpp"
 
 // #include <gli/gli.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace std;
 using namespace std::chrono;
 using namespace goat;
 using namespace goat::gfx;
@@ -44,7 +44,7 @@ using namespace goat::gfx;
 // \-------/\----/
 //  pos[12]  tex[8]
 //
-const vector<float> vertices{
+const std::vector<float> vertices{
     -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,
     0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -0.5f, -0.5f,
     0.5f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,
@@ -60,7 +60,7 @@ const vector<float> vertices{
 
 };
 
-const vector<unsigned int> indices{0, 1, 3, 1, 2, 3};
+const std::vector<unsigned int> indices{0, 1, 3, 1, 2, 3};
 const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0f, 5.0f, -15.0f),
                                    glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
                                    glm::vec3(2.4f, -0.4f, -3.5f),  glm::vec3(-1.7f, 3.0f, -7.5f),
@@ -72,25 +72,15 @@ inline void run_game() {
         LOG(ERROR) << "Fatal Error: " << description << "(Code " << error << ")";
     });
 
-    unique_ptr<GameWindow> window = make_unique<GameWindow>("Hello, World!");
-    window->createCamera();
+    std::unique_ptr<GameWindow> window =
+        std::make_unique<GameWindow>("Hello, World!", EngineConfig{.gl_target = gl::glAPI::OPENGL3_3});
 
     // Load GLAD
     if (!gladLoadGL(glfwGetProcAddress))
         throw std::runtime_error("Failed to load OpenGL functions via GLAD");
 
-    // Enable depth testing
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
-
-    // ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-    ImGui_ImplGlfw_InitForOpenGL(window->getHandle(), true);
-    ImGui_ImplOpenGL3_Init();
+    window->createCamera();
+    window->setFeature(gl::glFeature::DEPTH_TESTING);
 
     ShaderProgram shaderProg{};
     Shader vertexShader{"shaders/basic.vert", ShaderType::VERTEX};

@@ -13,6 +13,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 // clang-format on
+#include "gfx_gl.hpp"
 #include "texture.hpp"
 
 namespace goat::gfx {
@@ -38,22 +39,8 @@ enum class DataType {
     UNSIGNED_INT = GL_UNSIGNED_INT,
 };
 
-enum class glTarget {
-    OPENGL2_0,
-    OPENGL3_0,
-    OPENGL3_3,
-    OPENGL4_0,
-    OPENGL4_1,
-    OPENGL4_2,
-    OPENGL4_3,
-    OPENGL4_4,
-    OPENGL4_5,
-};
-
-enum class glProfile { CORE, COMPAT };
-
 struct EngineConfig {
-    glTarget gl_target = glTarget::OPENGL3_3;
+    gl::glAPI gl_target = gl::glAPI::OPENGL3_3;
     bool compat = false;
     std::vector<std::string> feat_requested;
 };
