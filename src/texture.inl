@@ -1,10 +1,11 @@
-#include "texture.hpp"
-
 #include <GLFW/glfw3.h>
 
 #include <string>
 
+#include "texture.hpp"
+
 namespace goat::gfx {
+
 Texture::Texture(std::string path) : path(path), handle(0U) {
     gli::texture texture = gli::load(path);
     assert(!texture.empty());
@@ -20,11 +21,6 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
     glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
 
     gli::tvec3<GLsizei> const extent(texture.extent());
-    GLsizei const faceTotal = static_cast<GLsizei>(texture.layers() * texture.faces());
-
-    bool texStorageAvailable = glfwExtensionSupported("GL_ARB_texture_storage");
-    LOG(INFO) << "GL_ARB_texture_storage: " << (texStorageAvailable ? "available" : "unavailable");
-
     auto levels = static_cast<GLint>(texture.levels());
     switch (texture.target()) {
         case gli::TARGET_2D:
@@ -78,4 +74,15 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
                 }
             }
 }
+
+inline Texture::~Texture() {
+    if (this->handle != 0)
+        glDeleteTextures(1, &this->handle);
+}
+
+constexpr inline GLuint Texture::getHandle() {
+    return this->handle;
+
 }  // namespace goat::gfx
+
+}

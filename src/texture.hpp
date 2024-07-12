@@ -8,19 +8,20 @@
 
 namespace goat::gfx {
 
+/** @brief Handles reading and loading texture (DDS) files into memory/OpenGL */
 class Texture {
    private:
+    // The file path the texture was loaded from
     std::string path;
+    // The OpenGL handle to the texture
     GLuint handle;
 
    public:
     Texture(std::string _path);
-    inline ~Texture() {
-        if (this->handle > 0)
-            glDeleteTextures(1, &this->handle);
-    }
-    inline GLuint getID() {
-        return this->handle;
-    }
+    inline ~Texture();
+    constexpr inline GLuint getHandle();
 };
+
 }  // namespace goat::gfx
+
+#include "texture.inl"

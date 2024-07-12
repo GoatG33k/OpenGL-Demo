@@ -1,55 +1,46 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <assert.h>
 #include <easylogging++.h>
 
+#include <gli/gl.hpp>
 #include <string>
 
+#include "camera.hpp"
 #include "constants.hpp"
-#include "world.hpp"
+#include "gfx.hpp"
 
 namespace goat {
+
 class GameWindow {
+   private:
+    typedef unsigned int uint;
+
    protected:
+    GLFWwindow *window;
     unsigned int width;
     unsigned int height;
     float deltaTime;
     float lastFrame;
-    GLFWwindow *window;
     camera::Camera *camera = nullptr;
 
     static inline void handleKeypress(GLFWwindow *window, int key, int scancode, int action, int mods);
-    static inline void logDriverInfo() {
-        LOG(INFO) << "------------------------------------";
-        LOG(INFO) << "OpenGL version: " << glGetString(GL_VERSION);
-        LOG(INFO) << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION);
-        LOG(INFO) << "Vendor: " << glGetString(GL_VENDOR);
-        LOG(INFO) << "Device Name: " << glGetString(GL_RENDERER);
-        LOG(INFO) << "------------------------------------";
-    }
+    static inline void logDriverInfo();
 
    public:
-    GameWindow(std::string window_title = "GameWindow", unsigned int _width = goat::gfx::DEFAULT_SCREEN_WIDTH,
-               unsigned int _height = goat::gfx::DEFAULT_SCREEN_HEIGHT);
+    GameWindow(std::string window_title = "GameWindow", gfx::glTarget gl_target = gfx::glTarget::OPENGL3_3,
+               unsigned int width = gfx::DEFAULT_SCREEN_WIDTH, unsigned int height = gfx::DEFAULT_SCREEN_HEIGHT);
     inline ~GameWindow() {
         glfwTerminate();
     }
 
-    inline GLFWwindow *get_window() const {
-        return this->window;
-    }
-
-    inline void createCamera(glm::vec3 start_pos = camera::CAMERA_DEFAULT_POS) {
-        if (this->camera)
-            throw std::runtime_error("Camera already set!");
-        this->camera = new camera::Camera(start_pos);
-        LOG(DEBUG) << "Created camera for GameWindow " << this;
-    }
-
-    constexpr camera::Camera *getCamera() const {
-        assert(this->camera != nullptr);
-        return this->camera;
-    }
+    inline void createCamera(glm::vec3 start_pos = camera::CAMERA_DEFAULT_POS);
+    constexpr inline GLFWwindow *getHandle() const;
+    constexpr inline camera::Camera *getCamera() const;
     void loop(std::function<void()> tick_fn);
 };
+
 }  // namespace goat
+
+#include "window.inl"

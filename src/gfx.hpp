@@ -38,132 +38,89 @@ enum class DataType {
     UNSIGNED_INT = GL_UNSIGNED_INT,
 };
 
-//
-// Shader
-//
+enum class glTarget {
+    OPENGL2_0,
+    OPENGL3_0,
+    OPENGL3_3,
+    OPENGL4_0,
+    OPENGL4_1,
+    OPENGL4_2,
+    OPENGL4_3,
+    OPENGL4_4,
+    OPENGL4_5,
+};
+
+enum class glProfile { CORE, COMPAT };
+
+struct EngineConfig {
+    glTarget gl_target = glTarget::OPENGL3_3;
+    bool compat = false;
+    std::vector<std::string> feat_requested;
+};
+
+/** @brief Loads and compiles a shader from a given file path.  */
 class Shader {
     friend class ShaderProgram;
 
    private:
-    ShaderType type;
-    GLuint handle;
-    GLuint program;
+    // The file path the shader was loaded from
     std::string path;
+    // The OpenGL handle to the shader
+    GLuint handle;
+    // The `ShaderProgram` that this shader is attached to (can be null)
+    GLuint program = 0U;
 
    public:
-    Shader(std::string filePath, ShaderType shaderType);
-    ~Shader() {
-        if (this->handle != 0)
-            glDeleteShader(handle);
-    }
-    GLuint getID() const {
-        return this->handle;
-    }
-    void setBool(const std::string name, bool value) const;
-    void setInt(const std::string name, int value) const;
-    void setInt(const std::string, unsigned int value) const;
-    void setFloat(const std::string name, float value) const;
+    explicit Shader(std::string filePath, ShaderType shaderType);
+    inline ~Shader();
 
+    // Retrieve the OpenGL handle of the shader
+    inline GLuint getHandle() const;
+    // Set a boolean value to a shader uniform (really an int)
+    inline void setBool(const std::string &name, bool value) const;
+    // Set an integer to a shader uniform
+    inline void setInt(const std::string &name, int value) const;
+    // Set an unsigned integer to a shader uniform
+    inline void setInt(const std::string &name, unsigned int value) const;
+    // Set a float to a shader uniform
+    inline void setFloat(const std::string &name, float value) const;
+    // Set a multi-dimensional array (matrix) to a shader uniform
     template <typename T>
-    inline void setMatrix(const std::string &name, T *value, size_t count) const {
-        assert(this->program > 0);
-        assert(count > 0 && count <= 4);
-
-        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
-        const T *data = &value[0];
-        if constexpr (std::is_floating_point<T>::value) {
-            if (count == 2)
-                glUniformMatrix2fv(uniformAddr, 1, GL_FALSE, data);
-            else if (count == 3)
-                glUniformMatrix3fv(uniformAddr, 1, GL_FALSE, data);
-            else if (count == 4)
-                glUniformMatrix4fv(uniformAddr, 1, GL_FALSE, data);
-        } else {
-            std::stringstream err;
-            err << "Unsupported data type: " << typeid(T).name();
-            throw std::runtime_error(err.str());
-        }
-    }
-
+    inline void setMatrix(const std::string &name, T *value, size_t count) const;
+    // Set a vector to a shader uniform
     template <typename T>
-    inline void setVector(const std::string &name, T *value, size_t count) const {
-        assert(this->program > 0);
-        assert(count > 0 && count <= 4);
-
-        auto uniformAddr = glGetUniformLocation(this->program, name.c_str());
-        const T *data = &value[0];
-        if constexpr (std::is_floating_point<T>::value) {
-            LOG(DEBUG) << "Setting uniform vector" << count;
-            if (count == 1)
-                glUniform1fv(uniformAddr, count, data);
-            else if (count == 2)
-                glUniform2fv(uniformAddr, count, data);
-            else if (count == 3)
-                glUniform3fv(uniformAddr, count, data);
-            else if (count == 4)
-                glUniform4fv(uniformAddr, count, data);
-        } else if (std::is_unsigned<T>::value && std::is_integral<T>::value) {
-            if (count == 1)
-                glUniform1uiv(uniformAddr, count, data);
-            else if (count == 2)
-                glUniform2uiv(uniformAddr, count, data);
-            else if (count == 3)
-                glUniform3uiv(uniformAddr, count, data);
-            else if (count == 4)
-                glUniform4uiv(uniformAddr, count, data);
-        } else if (std::is_integral<T>::value) {
-            if (count == 1)
-                glUniform1iv(uniformAddr, count, data);
-            else if (count == 2)
-                glUniform2iv(uniformAddr, count, data);
-            else if (count == 3)
-                glUniform3iv(uniformAddr, count, data);
-            else if (count == 4)
-                glUniform4iv(uniformAddr, count, data);
-        } else {
-            std::stringstream err;
-            err << "Unsupported data type: " << typeid(T).name();
-            throw std::runtime_error(err.str());
-        }
-    }
+    inline void setVector(const std::string &name, T *value, size_t count) const;
 };
 
-//
-// ShaderProgram
-//
+/**
+ * @brief A `ShaderProgram` is attached to one or more shaders and used
+ *        to apply them in the render loop
+ */
 class ShaderProgram {
    private:
+    // Whether the shader program has been linked to OpenGL
     bool linked;
+    // The OpenGL handle to the shader program
     GLuint program;
+    // The shaders that are attached to this program
     std::vector<Shader *> bound;
 
    public:
-    ShaderProgram() : linked(false), program(glCreateProgram()) {
-    }
-    inline ~ShaderProgram() {
-        for (auto shader : this->bound)
-            delete shader;
-
-        if (this->program != 0)
-            glDeleteProgram(this->program);
-    }
-    inline void use() {
-        glUseProgram(this->program);
-    }
-    inline int getUniform(char *name) {
-        return glGetUniformLocation(this->program, name);
-    }
-
-    constexpr bool isLinked() {
-        return this->linked;
-    }
+    ShaderProgram();
+    ~ShaderProgram();
+    // Use the shader program in a render loop
+    inline void use() const;
+    // Retrieve the location of a uniform in the shader program
+    inline int getUniformLocation(char *name) const;
+    // Check if the shader program has been linked
+    constexpr inline bool isLinked();
+    // Attach a shader to the shader program
     void attachShader(Shader *shader);
+    // Link the shader program to OpenGL
     bool link();
 };
 
-//
-// VBO
-//
+// A small struct for storing attribute bounds for VBOs
 struct VAOBound {
     GLuint index;
     size_t data_size;
@@ -171,35 +128,32 @@ struct VAOBound {
 };
 
 /**
- * A Vertex Buffer Object (VBO) is a buffer that contains vertex data that can be used to
- * render individual points into polygon(s).
+ * @brief A Vertex Buffer Object (VBO) is a buffer that contains vertex data that is
+ *        used to render individual points into shapes.
  *
- * Providing the `&indices` parameter will create an Element Buffer Object (EBO) automatically,
- * that can be used for rendering indexed vertices.
+ * @note Providing the `&indices` parameter will create an Element Buffer Object (EBO) automatically,
+ *       that can be used for rendering indexed vertices.
  */
-template <typename T = float>
 class VBO {
    private:
+    // Registered array sizing data for automatically configuring the VBO and attribute pointers
     std::vector<VAOBound> bounds = {};
-    DataType dataType;
+    // The type of draw to use
     DrawType drawType;
+    // The type of data to store
+    DataType dataType;
+    // The type of buffer to create
     BufferType bufferType;
+    // Internal OpenGL handles for the VAO, VBO, and EBO (optional)
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
 
    public:
-    /**
-     * Construct a new VBO object
-     *
-     * @param bufferType The type of buffer to create
-     * @param drawType The type of draw to use
-     * @param dataType The type of data to store
-     * @param indices The (optional) indices to use for the EBO
-     */
-    VBO(BufferType bufferType, DrawType drawType, DataType dataType,
-        const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
-        : dataType(dataType), drawType(drawType), bufferType(bufferType), ebo(0U) {
+    inline ~VBO();
+    explicit VBO(BufferType bufferType, DrawType drawType, DataType dataType,
+                 const std::vector<unsigned int> &indices = std::vector<unsigned int>{})
+        : drawType(drawType), dataType(dataType), bufferType(bufferType), ebo(0U) {
         assert(bufferType == BufferType::ARRAY || bufferType == BufferType::ELEMENT);
         assert(dataType == DataType::FLOAT || dataType == DataType::INT || dataType == DataType::UNSIGNED_INT);
         assert(drawType == DrawType::STATIC || drawType == DrawType::DYNAMIC);
@@ -216,18 +170,17 @@ class VBO {
         }
     }
 
-    ~VBO() {
-        glDeleteVertexArrays(1, &this->vao);
-        glDeleteBuffers(1, &this->vbo);
-        if (this->ebo > 0)
-            glDeleteBuffers(1, &this->ebo);
-    }
+    // Apply the vertex buffer in the current frame being rendered
+    inline void use();
 
-    inline void use() {
-        assert(this->bounds.size() > 0);
-        glBindVertexArray(this->vao);
-    }
-
+    /**
+     * @brief Configure attribute bounds for passing attributes to shaders from streamed vector data.
+     *
+     * @param index The index of the attribute in the shader program
+     * @param entries The number of entries in the attribute (e.g. 3 for a vec3)
+     * @param item_size The size of the item in the array (default is sizeof(T))
+     */
+    template <typename T = float>
     inline void addAttributeBound(unsigned int index, unsigned int entries, size_t item_size = sizeof(T)) {
         for (auto bound : this->bounds)
             if (bound.index == index)
@@ -235,6 +188,11 @@ class VBO {
         this->bounds.push_back({index, item_size, entries});
     }
 
+    /**
+     * @brief Apply the registered attribute bounds to OpenGL by automatically calculating the total stride
+     *        of each entry, the offset of each attribute index, and then streaming the vector data to the VBO.
+     */
+    template <typename T = float>
     inline void applyAttributeBounds(const std::vector<T> &points) {
         if (this->bounds.size() == 0)
             throw std::runtime_error("No attribute bounds set");
@@ -261,41 +219,43 @@ class VBO {
 };
 
 /**
- * A RenderContext contains a collection of VBOs and Shaders that are used to render a scene.
- * The RenderContext should be passed directly into the game loop.
+ * @brief A RenderContext contains a collection of VBOs, shader programs, and textures that are used to render a scene.
  */
-template <typename T = float>
 class RenderContext {
    private:
-    unsigned int texture_index = 0;
-    std::vector<VBO<T> *> vbos;
+    std::vector<VBO *> vbos;
     std::vector<ShaderProgram *> shaders;
     std::vector<Texture *> textures;
 
    public:
-    RenderContext(){};
-    ~RenderContext() {
+    RenderContext() {
+    }
+    inline ~RenderContext() {
         for (auto vbo : this->vbos) {
             delete vbo;
         }
     }
-
-    inline void add(VBO<T> *vbo) {
+    // Apply a VBO to the render context
+    inline void add(VBO *vbo) {
         this->vbos.push_back(vbo);
     }
-
+    // Apply a shader program to the render context
     inline void add(ShaderProgram *shader) {
         if (!shader->isLinked())
             shader->link();
         this->shaders.push_back(shader);
     }
-
+    // Apply a texture to the render context
     inline void add(Texture *texture) {
         this->textures.push_back(texture);
     }
-
+    // Render the scene from the game loop
     inline void render() {
-        // TODO: figure out how to draw random functions quickly
     }
 };
 }  // namespace goat::gfx
+
+// Implementations
+#include "gfx_shader.inl"
+#include "gfx_shaderprogram.inl"
+#include "gfx_vbo.inl"

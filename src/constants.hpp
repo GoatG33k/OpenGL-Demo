@@ -1,10 +1,8 @@
 #pragma once
 
-namespace goat {
+namespace goat::gfx {
 
-namespace gfx {
-static constexpr int DEFAULT_SCREEN_WIDTH = 1600;
-static constexpr int DEFAULT_SCREEN_HEIGHT = 900;
-}  // namespace gfx
+static constexpr unsigned int DEFAULT_SCREEN_WIDTH = 1600U;
+static constexpr unsigned int DEFAULT_SCREEN_HEIGHT = 900U;
 
 }  // namespace goat

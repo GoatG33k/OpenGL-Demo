@@ -98,16 +98,7 @@ elseif(APPLE)
 endif()
 
 # Assign source files and target output
-set(DEMO_SRC
-    src/texture.hpp
-    src/texture.cpp
-    src/main.cpp
-    src/window.hpp
-    src/window.cpp
-    src/gfx.hpp
-    src/gfx.cpp
-    src/world.hpp
-)
+set(DEMO_SRC src/main.cpp)
 
 add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})
 add_dependencies(GameDemo glfw)

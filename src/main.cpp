@@ -16,11 +16,11 @@ INITIALIZE_EASYLOGGINGPP
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include <constants.hpp>
-#include <gfx.hpp>
-#include <texture.hpp>
-#include <window.hpp>
-#include <world.hpp>
+#include "constants.hpp"
+#include "window.hpp"
+#include "camera.hpp"
+#include "texture.hpp"
+#include "gfx.hpp"
 // clang-format on
 
 #include <imgui.h>
@@ -30,7 +30,7 @@ INITIALIZE_EASYLOGGINGPP
 #include <imgui_impl_metal.h>
 #endif  // __APPLE__
 
-#include <gli/gli.hpp>
+// #include <gli/gli.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -89,7 +89,7 @@ inline void run_game() {
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    ImGui_ImplGlfw_InitForOpenGL(window->get_window(), true);
+    ImGui_ImplGlfw_InitForOpenGL(window->getHandle(), true);
     ImGui_ImplOpenGL3_Init();
 
     ShaderProgram shaderProg{};
@@ -100,7 +100,7 @@ inline void run_game() {
 
     // Let our fancy code calculate the attribute pointer bounds, stride, and
     // offset magically!
-    auto vbo = new VBO<float>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
+    auto vbo = new VBO(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
     vbo->addAttributeBound(0, 3);  // XYZ
     vbo->addAttributeBound(1, 2);  // TEX
     vbo->applyAttributeBounds(vertices);
@@ -125,25 +125,19 @@ inline void run_game() {
 
     auto camera = window->getCamera();
 
-    window->loop([&vertexShader, &model, &camera, &projection, &vbo, &shaderProg, &happy, &ctx]() {
+    window->loop([&vertexShader, &camera, &projection, &vbo, &shaderProg, &happy, &ctx]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
         ctx.render();
-
-        // vertexShader.setMatrix("model", static_cast<float *>(glm::value_ptr(model)), 4);
-        const float radius = 10.0f;
-
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
 
         vertexShader.setMatrix("view", static_cast<float *>(glm::value_ptr(camera->view)), 4);
         vertexShader.setMatrix("projection", static_cast<float *>(glm::value_ptr(projection)), 4);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, happy.getID());
+        glBindTexture(GL_TEXTURE_2D, happy.getHandle());
 
         shaderProg.use();
 
