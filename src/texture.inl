@@ -80,9 +80,8 @@ inline Texture::~Texture() {
         glDeleteTextures(1, &this->handle);
 }
 
-constexpr inline GLuint Texture::getHandle() {
+inline GLuint Texture::getHandle() {
     return this->handle;
+}
 
 }  // namespace goat::gfx
-
-}

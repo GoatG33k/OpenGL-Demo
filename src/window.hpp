@@ -16,12 +16,12 @@ namespace goat {
 
 class GameWindow {
    private:
-    typedef unsigned int uint;
+    typedef uint uint;
 
    protected:
     GLFWwindow *window;
-    unsigned int width;
-    unsigned int height;
+    uint width;
+    uint height;
     float deltaTime;
     float lastFrame;
     camera::Camera *camera = nullptr;
@@ -31,9 +31,11 @@ class GameWindow {
 
    public:
     GameWindow(std::string window_title = "GameWindow", gfx::EngineConfig = {gfx::gl::glAPI::OPENGL3_3},
-               unsigned int width = gfx::DEFAULT_SCREEN_WIDTH, unsigned int height = gfx::DEFAULT_SCREEN_HEIGHT);
+               uint width = gfx::DEFAULT_SCREEN_WIDTH, uint height = gfx::DEFAULT_SCREEN_HEIGHT);
     inline ~GameWindow() {
         glfwTerminate();
+        if (this->camera)
+            delete this->camera;
     }
 
     inline void createCamera(glm::vec3 start_pos = camera::CAMERA_DEFAULT_POS);

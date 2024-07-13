@@ -2,6 +2,13 @@
 
 A personal implementation of the [LearnOpenGL.com](https://learnopengl.com) tutorial, as I learn C++ for the first time as well (_please forgive me_).
 
+## Dependencies
+- GLI
+- GLM
+- GLAD generated headers
+- easylogging++
+- ImgUI
+- OpenGL Headers (Khronos Group)
 
 ## Features
 
@@ -11,12 +18,11 @@ A personal implementation of the [LearnOpenGL.com](https://learnopengl.com) tuto
 - [ ] OpenGL Basics
   - [x] MSAA
   - [x] GLSL Shaders
-  - [x] VAO / VBO
-  - [ ] VEO
-  - [ ] Textures
-  - [ ] Transformations
-  - [ ] Coordinate System
-  - [ ] Camera
+  - [x] VAO / VBO / EBO
+  - [x] Textures
+  - [x] Transformations
+  - [-] Coordinate System
+  - [-] Camera
 - [ ] Lighting
   - [ ] Colors
   - [ ] Basic Lighting

@@ -19,7 +19,10 @@ class Texture {
    public:
     Texture(std::string _path);
     inline ~Texture();
-    constexpr inline GLuint getHandle();
+    inline GLuint getHandle();
+    inline std::string getPath() const {
+        return this->path;
+    }
 };
 
 }  // namespace goat::gfx

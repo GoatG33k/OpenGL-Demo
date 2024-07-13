@@ -28,8 +28,10 @@ INITIALIZE_EASYLOGGINGPP
 #include "constants.hpp"
 #include "gfx.hpp"
 #include "menu.hpp"
+#include "render.hpp"
 #include "texture.hpp"
 #include "window.hpp"
+#include "world.hpp"
 
 // #include <gli/gli.hpp>
 #include <glm/glm.hpp>
@@ -82,71 +84,47 @@ inline void run_game() {
     window->createCamera();
     window->setFeature(gl::glFeature::DEPTH_TESTING);
 
-    ShaderProgram shaderProg{};
-    Shader vertexShader{"shaders/basic.vert", ShaderType::VERTEX};
-    Shader fragmentShader{"shaders/basic.frag", ShaderType::FRAGMENT};
-    shaderProg.attachShader(&vertexShader);
-    shaderProg.attachShader(&fragmentShader);
+    // Create our 3D scene and add our cube vertices
+    world::Scene *scene = world::Scene::create("Main Scene", std::shared_ptr<camera::Camera>(window->getCamera()));
 
-    // Let our fancy code calculate the attribute pointer bounds, stride, and
-    // offset magically!
-    auto vbo = new VBO(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
+    // Create the VBO buffer for our cube
+    auto vbo = std::make_shared<VBO>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
     vbo->addAttributeBound(0, 3);  // XYZ
-    vbo->addAttributeBound(1, 2);  // TEX
+    vbo->addAttributeBound(1, 2);  // UV
     vbo->applyAttributeBounds(vertices);
 
-    RenderContext ctx{};
-    ctx.add(vbo);
-    ctx.add(&shaderProg);
+    // Create cube objects
+    for (int i = 0; i < 10; i++) {
+        auto cube_obj = world::GameObject::create(cubePositions[i], ObjectLifetime::SCENE);
+        scene->objects.push_back(cube_obj);
+    }
 
-    // Textures!
-    Texture happy{"textures/gaga.dds"};
-    ctx.add(&happy);
+    scene->render_context->useVBO(vbo);
+    scene->render_context->loadShader("shaders/basic.vert", ShaderType::VERTEX);
+    scene->render_context->loadShader("shaders/basic.frag", ShaderType::FRAGMENT);
+    scene->render_context->loadTexture("textures/gaga.dds", "texture1");
 
-    shaderProg.use();
-    fragmentShader.setInt("texture1", 0);
+    scene->use();
 
-    // Create 3D world space
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    camera::Camera *camera = window->getCamera();
+    uint frameCount = 0U;
 
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
-
-    auto camera = window->getCamera();
-
-    window->loop([&vertexShader, &camera, &projection, &vbo, &shaderProg, &happy, &ctx]() {
+    window->loop([&frameCount, scene, &window]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::ShowDemoWindow();
 
-        ctx.render();
-
-        vertexShader.setMatrix("view", static_cast<float *>(glm::value_ptr(camera->view)), 4);
-        vertexShader.setMatrix("projection", static_cast<float *>(glm::value_ptr(projection)), 4);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, happy.getHandle());
-
-        shaderProg.use();
-
-        for (auto i = 0; i < 10; i++) {
-            vbo->use();
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-
-            float angle = 1.0f * (i + 1);
-            model = glm::rotate(model, glm::radians((float)glfwGetTime() * angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            vertexShader.setMatrix("model", static_cast<float *>(glm::value_ptr(model)), 4);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        scene->render();
 
         glBindVertexArray(0);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // if (frameCount >= 1) {
+        glfwSetWindowShouldClose(window->getHandle(), true);
+        // }
+        // frameCount++;
     });
 
     ImGui_ImplOpenGL3_Shutdown();

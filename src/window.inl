@@ -14,7 +14,7 @@ inline std::vector<int> _gl_target_to_version(gfx::gl::glAPI target);
 // I'm sorry, the memory boundaries made me do it...
 static GameWindow *CURRENT_GAME_WINDOW = nullptr;
 
-GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, unsigned int width, unsigned int height)
+GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint width, uint height)
     : window(0U), width(0U), height(0U), deltaTime(0.0f), lastFrame(0.0f) {
     assert(CURRENT_GAME_WINDOW == nullptr);
     CURRENT_GAME_WINDOW = this;
@@ -72,7 +72,15 @@ inline void GameWindow::loop(std::function<void()> tick_fn) {
         this->deltaTime = currentFrame - this->lastFrame;
         this->lastFrame = currentFrame;
 
+#ifdef __DEBUG__
+        auto startTime = high_resolution_clock::now();
+#endif
         tick_fn();
+#ifdef __DEBUG__
+        auto endTime = high_resolution_clock::now();
+        auto duration = duration_cast<milliseconds>(endTime - startTime);
+        LOG(DEBUG) << "Game loop took " << duration.count() << " ms";
+#endif
 
         glfwSwapBuffers(this->window);
         glfwPollEvents();
