@@ -1,15 +1,16 @@
+#include "./Window.hpp"
+
 #include <assert.h>
 
 #include <chrono>
 
-#include "gfx.hpp"
-#include "menu.hpp"
-#include "window.hpp"
+#include "menu/menu.hpp"
 
 using namespace std::chrono;
 
 namespace goat {
-inline std::vector<int> _gl_target_to_version(gfx::gl::glAPI target);
+
+std::vector<int> _gl_target_to_version(gfx::gl::glAPI target);
 
 // I'm sorry, the memory boundaries made me do it...
 static GameWindow *CURRENT_GAME_WINDOW = nullptr;
@@ -59,7 +60,7 @@ GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint 
     }
 }
 
-inline void GameWindow::loop(std::function<void()> tick_fn) {
+void GameWindow::loop(std::function<void()> tick_fn) {
     assert(!!this->window);
     this->logDriverInfo();
 
@@ -89,7 +90,7 @@ inline void GameWindow::loop(std::function<void()> tick_fn) {
     glfwPollEvents();
 }
 
-inline void GameWindow::handleKeypress(GLFWwindow *_glfwWindow, int key, int scancode, int action, int mods) {
+void GameWindow::handleKeypress(GLFWwindow *_glfwWindow, int key, int scancode, int action, int mods) {
     assert(CURRENT_GAME_WINDOW != nullptr);
     auto window = static_cast<GameWindow *>(CURRENT_GAME_WINDOW);
 
@@ -98,25 +99,25 @@ inline void GameWindow::handleKeypress(GLFWwindow *_glfwWindow, int key, int sca
         glfwSetWindowShouldClose(CURRENT_GAME_WINDOW->window, true);
     } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         if (key == GLFW_KEY_W) {
-            window->camera->move(camera::Direction::FORWARD, window->deltaTime);
+            window->camera->move(world::Direction::FORWARD, window->deltaTime);
         } else if (key == GLFW_KEY_S) {
-            window->camera->move(camera::Direction::BACKWARD, window->deltaTime);
+            window->camera->move(world::Direction::BACKWARD, window->deltaTime);
         } else if (key == GLFW_KEY_A) {
-            window->camera->move(camera::Direction::LEFT, window->deltaTime);
+            window->camera->move(world::Direction::LEFT, window->deltaTime);
         } else if (key == GLFW_KEY_D) {
-            window->camera->move(camera::Direction::RIGHT, window->deltaTime);
+            window->camera->move(world::Direction::RIGHT, window->deltaTime);
         }
     }
 }
 
-inline void GameWindow::createCamera(glm::vec3 start_pos) {
+void GameWindow::createCamera(glm::vec3 start_pos) {
     if (this->camera)
         throw std::runtime_error("Camera already set!");
-    this->camera = new camera::Camera(start_pos);
+    this->camera = new world::Camera(start_pos);
     LOG(DEBUG) << "Created camera for GameWindow " << this;
 }
 
-constexpr inline void GameWindow::setFeature(gfx::gl::glFeature feature, bool enable) {
+void GameWindow::setFeature(gfx::gl::glFeature feature, bool enable) {
     if (enable) {
         glEnable(static_cast<GLenum>(feature));
     } else {
@@ -124,16 +125,16 @@ constexpr inline void GameWindow::setFeature(gfx::gl::glFeature feature, bool en
     }
 }
 
-constexpr inline camera::Camera *GameWindow::getCamera() const {
+world::Camera *GameWindow::getCamera() const {
     assert(this->camera != nullptr);
     return this->camera;
 }
 
-constexpr inline GLFWwindow *GameWindow::getHandle() const {
+GLFWwindow *GameWindow::getHandle() const {
     return this->window;
 }
 
-inline void GameWindow::logDriverInfo() {
+void GameWindow::logDriverInfo() {
     LOG(INFO) << "------------------------------------";
     LOG(INFO) << "OpenGL version: " << glGetString(GL_VERSION);
     LOG(INFO) << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION);
@@ -143,7 +144,6 @@ inline void GameWindow::logDriverInfo() {
 }
 
 // Utilities
-
 inline std::vector<int> _gl_target_to_version(gfx::gl::glAPI target) {
     switch (target) {
         case gfx::gl::glAPI::OPENGL2_0:

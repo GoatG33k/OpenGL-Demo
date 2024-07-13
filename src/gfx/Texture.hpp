@@ -1,7 +1,8 @@
 #pragma once
 
+#include <GL/glcorearb.h>
+#include <GL/glext.h>
 #include <easylogging++.h>
-#include <glad/gl.h>
 
 #include <gli/gli.hpp>
 #include <string>
@@ -18,13 +19,11 @@ class Texture {
 
    public:
     Texture(std::string _path);
-    inline ~Texture();
-    inline GLuint getHandle();
-    inline std::string getPath() const {
+    ~Texture();
+    GLuint getHandle() const;
+    std::string getPath() const {
         return this->path;
     }
 };
 
 }  // namespace goat::gfx
-
-#include "texture.inl"

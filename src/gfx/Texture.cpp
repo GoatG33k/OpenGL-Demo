@@ -1,8 +1,8 @@
-#include <GLFW/glfw3.h>
+#include "Texture.hpp"
+
+#include <glad/gl.h>
 
 #include <string>
-
-#include "texture.hpp"
 
 namespace goat::gfx {
 
@@ -75,12 +75,13 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
             }
 }
 
-inline Texture::~Texture() {
+Texture::~Texture() {
+    LOG(DEBUG) << "free(Texture" << this << ")";
     if (this->handle != 0)
         glDeleteTextures(1, &this->handle);
 }
 
-inline GLuint Texture::getHandle() {
+GLuint Texture::getHandle() const {
     return this->handle;
 }
 

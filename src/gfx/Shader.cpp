@@ -1,14 +1,16 @@
+#include "Shader.hpp"
+
 #include <chrono>
 #include <string>
 
-#include "gfx.hpp"
+#include "constants.hpp"
 
 using namespace std::chrono;
 
 namespace goat::gfx {
 
 Shader::Shader(std::string filePath, ShaderType shaderType)
-    : path(std::move(filePath)), handle(glCreateShader(static_cast<GLenum>(shaderType))) {
+    : handle(glCreateShader(static_cast<GLenum>(shaderType))), path(std::move(filePath)) {
     std::ifstream ifs(path);
     std::string _shaderSource((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
     if (_shaderSource.empty())
@@ -36,17 +38,17 @@ Shader::Shader(std::string filePath, ShaderType shaderType)
               << duration_cast<milliseconds>(endTime - startTime).count() << "ms";
 }
 
-Shader::Shader(Shader &&other)
-    : path(std::move(other.path)), type(other.type), handle(other.handle) {
-    other.handle = 0;
-}
-
 Shader::~Shader() {
+    LOG(DEBUG) << "free(Shader<" << this << ">)";
     if (this->handle != 0)
         glDeleteShader(handle);
 }
 
-Shader & Shader::operator=(Shader &&other) {
+Shader::Shader(Shader &&other) : path(std::move(other.path)), type(other.type), handle(other.handle) {
+    other.handle = 0;
+}
+
+Shader &Shader::operator=(Shader &&other) {
     if (this == &other)
         return *this;
 

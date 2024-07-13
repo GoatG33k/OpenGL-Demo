@@ -1,8 +1,13 @@
-#include "menu.hpp"
+#include "./menu.hpp"
+
+#include <assert.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
 
 namespace goat::menu {
 
-inline void init_menu(GLFWwindow *window) {
+void init_menu(GLFWwindow *window) {
     assert(!_INITIALIZED);
     _INITIALIZED = true;
     IMGUI_CHECKVERSION();

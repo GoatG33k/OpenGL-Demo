@@ -2,20 +2,20 @@
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
-project(GameDemo VERSION 1.0 LANGUAGES CXX C)
+project(GameDemo VERSION 1.0 LANGUAGES C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_definitions(__DEBUG__)
+# add_compile_definitions(__DEBUG__)
 else()
     add_compile_definitions(__RELEASE__)
 endif()
 
 # Hardening compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong -mbranch-protection=standard -fexceptions")
 
@@ -104,9 +104,25 @@ elseif(APPLE)
 endif()
 
 # Assign source files and target output
-set(DEMO_SRC src/main.cpp)
+set(DEMO_SRC
+    "src/menu/menu.cpp"
 
-add_executable(GameDemo ${INCLUDE_SRC} ${DEMO_SRC})
+    "src/gfx/Shader.cpp"
+    "src/gfx/Texture.cpp"
+    "src/gfx/VBO.cpp"
+    "src/gfx/RenderContext.cpp"
+
+    "src/world/Camera.cpp"
+    "src/world/GameObject.cpp"
+    "src/world/Scene.cpp"
+    "src/world/Transform.cpp"
+
+    "src/Window.cpp"
+    "src/main.cpp"
+)
+message(NOTICE "DEMO_SRC => ${DEMO_SRC}")
+
+add_executable(GameDemo ${DEMO_SRC})
 add_dependencies(GameDemo glfw)
 target_link_libraries(GameDemo
     PRIVATE OpenGL::GL
@@ -116,12 +132,6 @@ target_link_libraries(GameDemo
     PRIVATE easyloggingpp
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
-endif()
-
 set(DEBUG_FLAGS "-g")
 set(RELEASE_FLAGS "-O3")
 target_compile_options(GameDemo PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_FLAGS}>")
@@ -129,11 +139,3 @@ target_compile_options(GameDemo PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_FLAGS}>")
 
 message(NOTICE "CMAKE_BUILD_TYPE => ${CMAKE_BUILD_TYPE}")
 message(NOTICE "CMAKE_CXX_FLAGS  => ${CMAKE_CXX_FLAGS}")
-
-# if( MSVC )
-# if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
-# message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
-# else()
-# set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GameDemo )
-# endif()
-# endif()

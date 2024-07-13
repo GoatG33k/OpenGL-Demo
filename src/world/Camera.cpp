@@ -1,22 +1,25 @@
+#include "Camera.hpp"
+
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "camera.hpp"
+#include "constants.hpp"
+#include "easylogging++.h"
 
-namespace goat::camera {
+namespace goat::world {
 
-Camera::Camera(glm::vec3 _pos, float _fov) : pos(std::move(_pos)), fov(std::move(_fov)) {
+Camera::Camera(glm::vec3 pos, float fov) : fov(fov), pos(pos) {
     this->redraw();
 }
 
-inline void Camera::redraw() noexcept {
+void Camera::redraw() {
     this->view = glm::lookAt(this->pos, this->pos + CAMERA_FRONT_VEC, CAMERA_UP_VEC);
-#if DEBUG
+#ifdef __DEBUG__
     LOG(DEBUG) << "Camera::redraw(fov=" << this->fov << ")";
 #endif
 }
 
-inline void Camera::move(Direction direction, float deltaTime) {
+void Camera::move(Direction direction, float deltaTime) {
     float speed = BASE_SPEED * deltaTime;
     if (direction == Direction::FORWARD) {
         this->pos += speed * CAMERA_FRONT_VEC;
@@ -30,8 +33,8 @@ inline void Camera::move(Direction direction, float deltaTime) {
     this->redraw();
 }
 
-inline glm::mat4 Camera::getProjectionMatrix() const {
+glm::mat4 Camera::getProjectionMatrix() const {
     return glm::perspective(glm::radians(this->fov), 800.f / 600.f, 0.1f, 100.0f);
 }
 
-}  // namespace goat::camera
+}  // namespace goat::world

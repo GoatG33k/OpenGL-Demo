@@ -24,19 +24,15 @@ INITIALIZE_EASYLOGGINGPP
 #endif  // __APPLE__
 // clang-format on
 
-#include "camera.hpp"
-#include "constants.hpp"
-#include "gfx.hpp"
-#include "menu.hpp"
-#include "render.hpp"
-#include "texture.hpp"
-#include "window.hpp"
-#include "world.hpp"
-
 // #include <gli/gli.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "Window.hpp"
+#include "constants.hpp"
+#include "world/GameObject.hpp"
+#include "world/Scene.hpp"
 
 using namespace std::chrono;
 using namespace goat;
@@ -69,7 +65,7 @@ const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0
                                    glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
                                    glm::vec3(1.5f, 0.2f, -1.5f),   glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-inline void run_game() {
+void run_game() {
     glfwSetErrorCallback([](int error, const char *description) {
         LOG(ERROR) << "Fatal Error: " << description << "(Code " << error << ")";
     });
@@ -85,7 +81,7 @@ inline void run_game() {
     window->setFeature(gl::glFeature::DEPTH_TESTING);
 
     // Create our 3D scene and add our cube vertices
-    world::Scene *scene = world::Scene::create("Main Scene", std::shared_ptr<camera::Camera>(window->getCamera()));
+    world::Scene *scene = world::Scene::create("Main Scene", std::shared_ptr<world::Camera>(window->getCamera()));
 
     // Create the VBO buffer for our cube
     auto vbo = std::make_shared<VBO>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
@@ -106,10 +102,7 @@ inline void run_game() {
 
     scene->use();
 
-    camera::Camera *camera = window->getCamera();
-    uint frameCount = 0U;
-
-    window->loop([&frameCount, scene, &window]() {
+    window->loop([scene]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -117,14 +110,8 @@ inline void run_game() {
 
         scene->render();
 
-        glBindVertexArray(0);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // if (frameCount >= 1) {
-        glfwSetWindowShouldClose(window->getHandle(), true);
-        // }
-        // frameCount++;
     });
 
     ImGui_ImplOpenGL3_Shutdown();
