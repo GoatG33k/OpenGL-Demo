@@ -65,13 +65,18 @@ class Shader {
     GLuint handle;
 
    public:
-    explicit Shader(const std::string filePath, const ShaderType shaderType);
-    inline ~Shader();
+    Shader(std::string filePath, ShaderType shaderType);
+    Shader(const Shader &) = delete;
+    Shader(Shader &&);
+    ~Shader();
+
+    Shader & operator=(const Shader &) = delete;
+    Shader & operator=(Shader &&);
 
     // Retrieve the OpenGL handle of the shader
-    inline GLuint getHandle() const;
+    GLuint getHandle() const;
     // Return the shader try
-    inline ShaderType getShaderType() const;
+    ShaderType getShaderType() const;
 };
 
 /**
