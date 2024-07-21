@@ -19,15 +19,9 @@ INITIALIZE_EASYLOGGINGPP
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#ifdef __APPLE__
-#include <imgui_impl_metal.h>
-#endif  // __APPLE__
 // clang-format on
 
 // #include <gli/gli.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "Window.hpp"
 #include "constants.hpp"
@@ -43,48 +37,49 @@ using namespace goat::gfx;
 //  pos[12]  tex[8]
 //
 const std::vector<float> vertices{
-    -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,
-    0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -0.5f, -0.5f,
-    0.5f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,
-    1.0f,  1.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,
-    0.0f,  -0.5f, 0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,
-    -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,
-    0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f,
-    0.5f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f, -0.5f,
-    1.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  -0.5f, -0.5f, 0.5f,  0.0f,
-    0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,
-    0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  -0.5f,
-    0.5f,  -0.5f, 0.0f,  1.0f
+  -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,
+  1.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f,
+  0.0f,  0.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  0.5f,
+  0.5f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,  1.0f,  1.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  -0.5f,
+  -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 1.0f,  1.0f,
+  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,
+  0.0f,  -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  -0.5f,
+  1.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,  -0.5f,
+  0.5f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.5f,
+  -0.5f, -0.5f, 1.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,
+  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,
+  1.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  1.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,
+  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f
 
 };
 
 const std::vector<unsigned int> indices{0, 1, 3, 1, 2, 3};
-const glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0f, 5.0f, -15.0f),
-                                   glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
-                                   glm::vec3(2.4f, -0.4f, -3.5f),  glm::vec3(-1.7f, 3.0f, -7.5f),
-                                   glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
-                                   glm::vec3(1.5f, 0.2f, -1.5f),   glm::vec3(-1.3f, 1.0f, -1.5f)};
+const vec3s cubePositions[] = {
+  {{0.0f, 0.0f, 0.0f}},   {{2.0f, 5.0f, -15.0f}}, {{-1.5f, -2.2f, -2.5f}}, {{-3.8f, -2.0f, -12.3f}},
+  {{2.4f, -0.4f, -3.5f}}, {{-1.7f, 3.0f, -7.5f}}, {{1.3f, -2.0f, -2.5f}},  {{1.5f, 2.0f, -2.5f}},
+  {{1.5f, 0.2f, -1.5f}},  {{-1.3f, 1.0f, -1.5f}}};
 
 void run_game() {
     glfwSetErrorCallback([](int error, const char *description) {
         LOG(ERROR) << "Fatal Error: " << description << "(Code " << error << ")";
     });
 
-    std::unique_ptr<GameWindow> window =
-        std::make_unique<GameWindow>("Hello, World!", EngineConfig{.gl_target = gl::glAPI::OPENGL3_3});
+    std::unique_ptr<GameWindow> window = std::make_unique<GameWindow>(
+        "Hello, World!", EngineConfig{.gl_target = gl::glAPI::OPENGL3_3});
 
     // Load GLAD
     if (!gladLoadGL(glfwGetProcAddress))
         throw std::runtime_error("Failed to load OpenGL functions via GLAD");
 
-    window->createCamera();
+    window->createCamera(std::move(world::getCameraDefaultPos()));
     window->setFeature(gl::glFeature::DEPTH_TESTING);
 
     // Create our 3D scene and add our cube vertices
-    world::Scene *scene = world::Scene::create("Main Scene", std::shared_ptr<world::Camera>(window->getCamera()));
+    world::Scene *scene =
+        world::Scene::create("Main Scene", std::shared_ptr<world::Camera>(window->getCamera()));
 
     // Create the VBO buffer for our cube
-    auto vbo = std::make_shared<VBO>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
+    auto vbo = std::make_unique<VBO>(BufferType::ARRAY, DrawType::STATIC, DataType::FLOAT, indices);
     vbo->addAttributeBound(0, 3);  // XYZ
     vbo->addAttributeBound(1, 2);  // UV
     vbo->applyAttributeBounds(vertices);
@@ -95,14 +90,14 @@ void run_game() {
         scene->objects.push_back(cube_obj);
     }
 
-    scene->render_context->useVBO(vbo);
+    scene->render_context->useVBO(std::move(vbo));
     scene->render_context->loadShader("shaders/basic.vert", ShaderType::VERTEX);
     scene->render_context->loadShader("shaders/basic.frag", ShaderType::FRAGMENT);
     scene->render_context->loadTexture("textures/gaga.dds", "texture1");
 
     scene->use();
 
-    window->loop([scene]() {
+    window->loop([scene = std::move(scene)]() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();

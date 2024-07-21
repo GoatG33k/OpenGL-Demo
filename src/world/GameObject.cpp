@@ -1,18 +1,25 @@
 #include "GameObject.hpp"
 
+#include <assert.h>
+#include <cglm/affine.h>
+
 namespace goat::world {
 
 /** @brief Return the model matrix for the object taking its transformations into account */
-glm::mat4 GameObject::getModelMatrix() const {
+mat4s& GameObject::getModelMatrix() const {
     assert(this->transform != nullptr);
 
-    auto model = mat4(1.0f);
-    auto transform = this->transform.get();
-    model = glm::translate(model, transform->pos);
-    model = glm::rotate(model, glm::radians(transform->rot.x), vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(transform->rot.y), vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(transform->rot.z), vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, transform->scale);
+    mat4s model = mat4s{
+      {{1.0f, 1.0f, 1.0f, 1.0f},
+       {1.0f, 1.0f, 1.0f, 1.0f},
+       {1.0f, 1.0f, 1.0f, 1.0f},
+       {1.0f, 1.0f, 1.0f, 1.0f}},
+    };
+    model = glms_translate(model, this->transform->pos);
+    glms_rotate(model, glm_rad(this->transform->rot.x), vec3s{{1.0f, 0.0f, 0.0f}});
+    glms_rotate(model, glm_rad(this->transform->rot.y), vec3s{{0.0f, 1.0f, 0.0f}});
+    glms_rotate(model, glm_rad(this->transform->rot.z), vec3s{{0.0f, 0.0f, 1.0f}});
+    glms_scale(model, this->transform->scale);
     return model;
 }
 

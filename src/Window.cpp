@@ -15,8 +15,17 @@ std::vector<int> _gl_target_to_version(gfx::gl::glAPI target);
 // I'm sorry, the memory boundaries made me do it...
 static GameWindow *CURRENT_GAME_WINDOW = nullptr;
 
-GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint width, uint height)
-    : window(0U), width(0U), height(0U), deltaTime(0.0f), lastFrame(0.0f) {
+GameWindow::GameWindow(
+    std::string const &window_title, gfx::EngineConfig config, uint width, uint height)
+    : window(0U),
+      width(0U),
+      height(0U),
+      firstMouse(true),
+      lastX(0.0),
+      lastY(0.0),
+      deltaTime(0.0f),
+      lastFrame(0.0f) {
+    // Set global window instance
     assert(CURRENT_GAME_WINDOW == nullptr);
     CURRENT_GAME_WINDOW = this;
 
@@ -26,8 +35,7 @@ GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint 
         throw std::runtime_error(err.str());
     }
 
-    if (!glfwInit())
-        throw std::runtime_error("Failed to initialize GLFW");
+    if (!glfwInit()) throw std::runtime_error("Failed to initialize GLFW");
 
     // Set the OpenGL version
     auto version = _gl_target_to_version(config.gl_target);
@@ -35,7 +43,8 @@ GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint 
 
     int major = version[0];
     int minor = version[1];
-    LOG(DEBUG) << "Requesting OpenGL " << major << "." << minor << " (" << (config.compat ? "compat" : "core") << ")";
+    LOG(DEBUG) << "Requesting OpenGL " << major << "." << minor << " ("
+               << (config.compat ? "compat" : "core") << ")";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version[0]);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version[1]);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -49,8 +58,9 @@ GameWindow::GameWindow(std::string window_title, gfx::EngineConfig config, uint 
     if (this->window) {
         glfwMakeContextCurrent(this->window);
         glfwSetKeyCallback(this->window, handleKeypress);
-        glfwSetFramebufferSizeCallback(
-            this->window, [](GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); });
+        glfwSetFramebufferSizeCallback(this->window, [](GLFWwindow *window, int width, int height) {
+            glViewport(0, 0, width, height);
+        });
 
         // Initialize ImGUI
         goat::menu::init_menu(this->window);
@@ -90,7 +100,17 @@ void GameWindow::loop(std::function<void()> tick_fn) {
     glfwPollEvents();
 }
 
-void GameWindow::handleKeypress(GLFWwindow *_glfwWindow, int key, int scancode, int action, int mods) {
+void GameWindow::handleMouse(GLFWwindow *_glfwWindow, double xpos, double ypos) {
+    assert(CURRENT_GAME_WINDOW != nullptr);
+    auto window = CURRENT_GAME_WINDOW;
+
+    if (window->camera) {
+        // window->camera->turn()
+    }
+}
+
+void GameWindow::handleKeypress(
+    GLFWwindow *_glfwWindow, int key, int scancode, int action, int mods) {
     assert(CURRENT_GAME_WINDOW != nullptr);
     auto window = static_cast<GameWindow *>(CURRENT_GAME_WINDOW);
 
@@ -99,25 +119,24 @@ void GameWindow::handleKeypress(GLFWwindow *_glfwWindow, int key, int scancode, 
         glfwSetWindowShouldClose(CURRENT_GAME_WINDOW->window, true);
     } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         if (key == GLFW_KEY_W) {
-            window->camera->move(world::Direction::FORWARD, window->deltaTime);
+            window->camera->walk(world::Direction::FORWARD, window->deltaTime);
         } else if (key == GLFW_KEY_S) {
-            window->camera->move(world::Direction::BACKWARD, window->deltaTime);
+            window->camera->walk(world::Direction::BACKWARD, window->deltaTime);
         } else if (key == GLFW_KEY_A) {
-            window->camera->move(world::Direction::LEFT, window->deltaTime);
+            window->camera->walk(world::Direction::LEFT, window->deltaTime);
         } else if (key == GLFW_KEY_D) {
-            window->camera->move(world::Direction::RIGHT, window->deltaTime);
+            window->camera->walk(world::Direction::RIGHT, window->deltaTime);
         }
     }
 }
 
-void GameWindow::createCamera(glm::vec3 start_pos) {
-    if (this->camera)
-        throw std::runtime_error("Camera already set!");
-    this->camera = new world::Camera(start_pos);
+constexpr void GameWindow::createCamera(vec3s start_pos = world::getCameraDefaultPos()) {
+    if (this->camera) throw std::runtime_error("Camera already set!");
+    this->camera = std::make_shared<world::Camera>(start_pos);
     LOG(DEBUG) << "Created camera for GameWindow " << this;
 }
 
-void GameWindow::setFeature(gfx::gl::glFeature feature, bool enable) {
+constexpr void GameWindow::setFeature(const gfx::gl::glFeature feature, bool enable) const {
     if (enable) {
         glEnable(static_cast<GLenum>(feature));
     } else {
@@ -125,14 +144,12 @@ void GameWindow::setFeature(gfx::gl::glFeature feature, bool enable) {
     }
 }
 
-world::Camera *GameWindow::getCamera() const {
+const std::shared_ptr<world::Camera> &GameWindow::getCamera() const {
     assert(this->camera != nullptr);
     return this->camera;
 }
 
-GLFWwindow *GameWindow::getHandle() const {
-    return this->window;
-}
+GLFWwindow *GameWindow::getHandle() const { return this->window; }
 
 void GameWindow::logDriverInfo() {
     LOG(INFO) << "------------------------------------";

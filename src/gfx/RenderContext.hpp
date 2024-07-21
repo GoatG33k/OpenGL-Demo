@@ -12,50 +12,50 @@
 namespace goat::gfx {
 
 /**
- * @brief A RenderContext contains a collection of VBOs, shader programs, and textures that are used to render a scene.
- *        Each object added to the context is visible and can/will be associated with any other objects
+ * @brief A RenderContext contains a collection of VBOs, shader programs, and textures that are used
+ * to render a scene. Each object added to the context is visible and can/will be associated with
+ * any other objects
  */
 class RenderContext {
-   private:
-    bool compiled = false;
-    uint uv_count = 0U;
-    GLuint program = 0U;
-    std::vector<std::shared_ptr<VBO>> vbos;
+    bool compiled;
+    uint uv_count;
+    GLuint program;
+    std::vector<std::unique_ptr<VBO>> vbos;
     std::vector<std::shared_ptr<Shader>> shaders;
     std::vector<std::shared_ptr<BoundTexture>> textures;
 
-    // Apply a VBO to the render context
-    void add(const std::shared_ptr<VBO> &vbo);
-    // Apply a texture to the render context
-    void add(const std::shared_ptr<Texture> &texture, const std::string uniform_name);
-    // Apply a shader program to the render context
-    void add(const std::shared_ptr<Shader> &shader);
-    // Swap the active shader program to this one if it is not already active
+    /// Apply a texture to the render context
+    void add(const std::shared_ptr<Texture> &&texture, std::string const &uniform_name);
+    /// Apply a shader program to the render context
+    void add(const std::shared_ptr<Shader> &&shader);
+    /// Apply a VBO to the render context
+    void add(std::unique_ptr<VBO> &&vbo);
 
    public:
     RenderContext();
     ~RenderContext();
+    RenderContext(RenderContext &&);
+    RenderContext(const RenderContext &) = delete;
+    RenderContext &operator=(RenderContext &&);
+    RenderContext &operator=(const RenderContext &) = delete;
 
+    /// Compile textures and shaders, bind the program to OpenGL, and compact vectors
     void compile();
+    // Determine if the render context has been compiled already
+    constexpr bool inline isCompiled() const { return this->compiled; }
 
+    /// Transfer ownership of a VBO to the render context
+    void inline useVBO(std::unique_ptr<VBO> &&vbo) { this->add(std::move(vbo)); }
     // Load a texture from a file path and attach it to the render context
-    void loadTexture(std::string path, std::string uniform_target);
-
+    [[deprecated]] void loadTexture(std::string const &path, std::string const &uniform_target);
     // Load a shader from a file path and attach it to the render context
-    void loadShader(std::string path, const ShaderType type);
-
-    void useVBO(std::shared_ptr<VBO> &vbo) {
-        this->add(vbo);
-    }
-
+    [[deprecated]] void loadShader(std::string const &path, ShaderType type);
     // Return the location of a uniform in the shader program
-    int getUniform(const std::string &name) const;
+    int getUniform(std::string const &name) const;
 
     // Render the scene from the game loop
-    void render(world::Camera *camera) {
-#ifdef __DEBUG__
+    void inline render() {
         auto startTime = std::chrono::high_resolution_clock::now();
-#endif
 
         // Draw polygons!
         for (const auto &vbo : this->vbos) {
@@ -64,11 +64,10 @@ class RenderContext {
             // glBindVertexArray(0);
         }
 
-#ifdef __DEBUG__
         auto endTime = std::chrono::high_resolution_clock::now();
         auto duration = duration_cast<std::chrono::microseconds>(endTime - startTime);
-        LOG(DEBUG) << "RenderContext::render() took " << duration.count() << " μs (" << this->vbos.size() << " VBOs)";
-#endif
+        LOG(DEBUG) << "RenderContext::render() took " << duration.count() << " μs ("
+                   << this->vbos.size() << " VBOs)";
     }
 
     // Use the shader program for this frame
@@ -85,7 +84,8 @@ class RenderContext {
             glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + bound_texture->index));
             glBindTexture(GL_TEXTURE_2D, texture->getHandle());
 #ifdef __DEBUG__
-            LOG(DEBUG) << " glActiveTexture(GL_TEXTURE" << bound_texture->index << ") path=" << texture->getPath();
+            LOG(DEBUG) << " glActiveTexture(GL_TEXTURE" << bound_texture->index
+                       << ") path=" << texture->getPath();
             LOG(DEBUG) << " glBindTexture(GL_TEXTURE_2D, " << texture->getHandle() << ")";
 #endif
         }
@@ -113,7 +113,8 @@ class RenderContext {
         const T *data = &value[0];
         if (std::is_floating_point<T>::value) {
 #ifdef __DEBUG__
-            LOG(DEBUG) << " glUniformMatrix" << count << "fv(" << uniformAddr << ", 1, GL_FALSE, " << data << ")";
+            LOG(DEBUG) << " glUniformMatrix" << count << "fv(" << uniformAddr << ", 1, GL_FALSE, "
+                       << data << ")";
 #endif
 
             if (count == 2)

@@ -1,5 +1,7 @@
 #include "Texture.hpp"
 
+#include <cglm/ivec3.h>
+#include <cglm/struct.h>
 #include <glad/gl.h>
 
 #include <string>
@@ -40,7 +42,8 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
         for (std::size_t Face = 0; Face < texture.faces(); ++Face)
             for (std::size_t Level = 0; Level < texture.levels(); ++Level) {
                 GLsizei const LayerGL = static_cast<GLsizei>(Layer);
-                glm::tvec3<GLsizei> Extent(texture.extent(Level));
+                auto _extent = texture.extent(Level);
+                ivec3s Extent = {_extent.x, _extent.y, _extent.z};
                 target = gli::is_target_cube(texture.target())
                              ? static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face)
                              : target;
@@ -49,24 +52,28 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
                     case gli::TARGET_2D:
                     case gli::TARGET_CUBE:
                         if (gli::is_compressed(texture.format()))
-                            glCompressedTexSubImage2D(target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
-                                                      format.Internal, static_cast<GLsizei>(texture.size(Level)),
-                                                      texture.data(Layer, Face, Level));
+                            glCompressedTexSubImage2D(
+                                target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
+                                format.Internal, static_cast<GLsizei>(texture.size(Level)),
+                                texture.data(Layer, Face, Level));
                         else
-                            glTexSubImage2D(target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
-                                            format.External, format.Type, texture.data(Layer, Face, Level));
+                            glTexSubImage2D(
+                                target, static_cast<GLint>(Level), 0, 0, Extent.x, Extent.y,
+                                format.External, format.Type, texture.data(Layer, Face, Level));
                         break;
                     case gli::TARGET_3D:
                     case gli::TARGET_CUBE_ARRAY:
                         if (gli::is_compressed(texture.format()))
-                            glCompressedTexSubImage3D(target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
-                                                      Extent.z, format.Internal,
-                                                      static_cast<GLsizei>(texture.size(Level)),
-                                                      texture.data(Layer, Face, Level));
+                            glCompressedTexSubImage3D(
+                                target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
+                                Extent.z, format.Internal,
+                                static_cast<GLsizei>(texture.size(Level)),
+                                texture.data(Layer, Face, Level));
                         else
-                            glTexSubImage3D(target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
-                                            texture.target() == gli::TARGET_3D ? Extent.z : LayerGL, format.External,
-                                            format.Type, texture.data(Layer, Face, Level));
+                            glTexSubImage3D(
+                                target, static_cast<GLint>(Level), 0, 0, 0, Extent.x, Extent.y,
+                                texture.target() == gli::TARGET_3D ? Extent.z : LayerGL,
+                                format.External, format.Type, texture.data(Layer, Face, Level));
                         break;
                     default:
                         assert(0);
@@ -77,12 +84,9 @@ Texture::Texture(std::string path) : path(path), handle(0U) {
 
 Texture::~Texture() {
     LOG(DEBUG) << "free(Texture" << this << ")";
-    if (this->handle != 0)
-        glDeleteTextures(1, &this->handle);
+    if (this->handle != 0) glDeleteTextures(1, &this->handle);
 }
 
-GLuint Texture::getHandle() const {
-    return this->handle;
-}
+uint Texture::getHandle() const { return this->handle; }
 
 }  // namespace goat::gfx

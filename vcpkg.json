@@ -1,0 +1,42 @@
+{
+  "name": "goatgame",
+  "version": "0.0.1",
+  "features": {
+    "win32": {
+      "description": "Windows platform dependencies",
+      "dependencies": [
+        {
+          "name": "imgui",
+          "features": [
+            "dx11-binding"
+          ]
+        }
+      ]
+    },
+    "macos": {
+      "description": "macOS platform dependencies",
+      "dependencies": [
+        {
+          "name": "imgui",
+          "features": [
+            "metal-binding"
+          ]
+        }
+      ]
+    }
+  },
+  "dependencies": [
+    "cglm",
+    "easyloggingpp",
+    "glfw3",
+    "gli",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "opengl-registry"
+  ]
+}

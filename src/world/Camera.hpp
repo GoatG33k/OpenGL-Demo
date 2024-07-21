@@ -1,10 +1,11 @@
 #pragma once
 
 #include "constants.hpp"
+#include "world/Transform.hpp"
 
 namespace goat::world {
 
-enum Direction {
+enum class Direction {
     FORWARD,
     BACKWARD,
     LEFT,
@@ -14,17 +15,18 @@ enum Direction {
 class Camera {
    public:
     float fov;
-    // Current camera view matrix
-    mat4 view;
-    // Camera world position
-    vec3 pos;
+    Transform transform;
+    mat4s view;
+    vec3s pos;
 
-    Camera(vec3 pos, float fov = DEFAULT_FOV);
+    Camera(float fov);
+    Camera();
     ~Camera(){};
 
     void redraw();
-    void move(Direction direction, float deltaTime);
-    mat4 getProjectionMatrix() const;
+    void turn(const Direction direction, float deltaTime);
+    void walk(const Direction direction, float deltaTime);
+    mat4s getProjectionMatrix() const;
 };
 
 }  // namespace goat::world

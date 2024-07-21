@@ -1,40 +1,57 @@
 #include "Camera.hpp"
 
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_transform.hpp>
+#include <cglm/cam.h>
+#include <easylogging++.h>
 
 #include "constants.hpp"
-#include "easylogging++.h"
 
 namespace goat::world {
 
-Camera::Camera(glm::vec3 pos, float fov) : fov(fov), pos(pos) {
+Camera::Camera() : Camera(DEFAULT_FOV) {}
+Camera::Camera(float fov) {
+    this->pos = getCameraDefaultPos();
     this->redraw();
 }
 
 void Camera::redraw() {
-    this->view = glm::lookAt(this->pos, this->pos + CAMERA_FRONT_VEC, CAMERA_UP_VEC);
-#ifdef __DEBUG__
+    this->view =
+        glms_lookat(this->pos, glms_vec3_add(this->pos, getCameraFrontVec()), getCameraUpVec());
     LOG(DEBUG) << "Camera::redraw(fov=" << this->fov << ")";
-#endif
 }
 
-void Camera::move(Direction direction, float deltaTime) {
+/** Rotate the camera */
+void Camera::turn(Direction direction, float deltaTime) {
+    // this->front
+}
+
+/** Walk the camera's position */
+void Camera::walk(Direction direction, float deltaTime) {
     float speed = BASE_SPEED * deltaTime;
+    auto CAMERA_FRONT_VEC = getCameraFrontVec();
+    auto CAMERA_UP_VEC = getCameraUpVec();
+
     if (direction == Direction::FORWARD) {
-        this->pos += speed * CAMERA_FRONT_VEC;
+        vec3s adjust = glms_vec3_mul(CAMERA_FRONT_VEC, vec3s{.x = speed, .y = speed, .z = speed});
+        this->pos = glms_vec3_add(this->pos, adjust);
     } else if (direction == Direction::BACKWARD) {
-        this->pos -= speed * CAMERA_FRONT_VEC;
+        vec3s adjust = glms_vec3_mul(CAMERA_FRONT_VEC, vec3s{.x = speed, .y = speed, .z = speed});
+        this->pos = glms_vec3_sub(this->pos, adjust);
     } else if (direction == Direction::LEFT) {
-        this->pos -= glm::normalize(glm::cross(CAMERA_FRONT_VEC, CAMERA_UP_VEC)) * speed;
+        vec3s adjust = glms_vec3_cross(CAMERA_FRONT_VEC, CAMERA_UP_VEC);
+        adjust = glms_vec3_normalize(adjust);
+        adjust = glms_vec3_mul(adjust, vec3s{.x = speed, .y = speed, .z = speed});
+        this->pos = glms_vec3_sub(this->pos, adjust);
     } else if (direction == Direction::RIGHT) {
-        this->pos += glm::normalize(glm::cross(CAMERA_FRONT_VEC, CAMERA_UP_VEC)) * speed;
+        vec3s adjust = glms_vec3_cross(CAMERA_FRONT_VEC, CAMERA_UP_VEC);
+        adjust = glms_vec3_normalize(adjust);
+        adjust = glms_vec3_mul(adjust, vec3s{.x = speed, .y = speed, .z = speed});
+        this->pos = glms_vec3_add(this->pos, adjust);
     }
     this->redraw();
 }
 
-glm::mat4 Camera::getProjectionMatrix() const {
-    return glm::perspective(glm::radians(this->fov), 800.f / 600.f, 0.1f, 100.0f);
+mat4s Camera::getProjectionMatrix() const {
+    return glms_perspective(glm_rad(this->fov), 800.f / 600.f, 0.1f, 100.0f);
 }
 
 }  // namespace goat::world

@@ -4,8 +4,9 @@
 namespace goat::gfx {
 // goat::gfx
 
-static constexpr unsigned int DEFAULT_SCREEN_WIDTH = 1600U;
-static constexpr unsigned int DEFAULT_SCREEN_HEIGHT = 900U;
+// Default screen dimensions
+constexpr unsigned int DEFAULT_SCREEN_WIDTH = 1600U;
+constexpr unsigned int DEFAULT_SCREEN_HEIGHT = 900U;
 
 enum class ShaderType {
     VERTEX = GL_VERTEX_SHADER,
@@ -16,6 +17,7 @@ enum class BufferType {
     ARRAY = GL_ARRAY_BUFFER,
     ELEMENT = GL_ELEMENT_ARRAY_BUFFER,
 };
+
 enum class DrawType {
     STATIC = GL_STATIC_DRAW,
     DYNAMIC = GL_DYNAMIC_DRAW,

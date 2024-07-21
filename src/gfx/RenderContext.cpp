@@ -1,7 +1,13 @@
 #include "RenderContext.hpp"
 
 namespace goat::gfx {
-RenderContext::RenderContext() : uv_count(0U), program(glCreateProgram()), vbos({}), shaders({}), textures({}){};
+
+RenderContext::RenderContext() : uv_count(0U) {
+    this->program = glCreateProgram();
+    this->vbos = std::vector<std::unique_ptr<VBO>>();
+    this->shaders = std::vector<std::shared_ptr<Shader>>();
+    this->textures = std::vector<std::shared_ptr<BoundTexture>>();
+}
 
 RenderContext::~RenderContext() {
     LOG(DEBUG) << "free(RenderContext<" << this << ">)";
@@ -10,16 +16,12 @@ RenderContext::~RenderContext() {
     }
 }
 
-/** A RenderContext cannot be modified after it has been "compiled" */
+/// Pack the vectors in memory. A RenderContext should not be modified after it has been "compiled"
 void RenderContext::compile() {
-    if (this->compiled)
-        return;
+    assert(!this->compiled);
     assert(this->vbos.size() > 0);
     assert(this->shaders.size() > 0);
-
-#ifdef __DEBUG__
     LOG(DEBUG) << "RenderContext<" << this << ">::compile() START";
-#endif
 
     // Shrink our memory consumption
     this->vbos.shrink_to_fit();
@@ -28,16 +30,12 @@ void RenderContext::compile() {
 
     for (const auto &shader : this->shaders) {
         glAttachShader(this->program, shader->getHandle());
-#ifdef __DEBUG__
         LOG(DEBUG) << " glAttachShader(" << this->program << ", " << shader->getHandle() << ")";
-#endif
     }
 
     int success{};
     char infoLog[512]{};
-#ifdef __DEBUG__
     LOG(DEBUG) << " glLinkProgram(" << this->program << ")";
-#endif
     glLinkProgram(this->program);
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
@@ -51,50 +49,50 @@ void RenderContext::compile() {
     // (Re-)assign uniforms to textures
     for (const auto &texture : this->textures) {
         auto uniform_name = texture->uniform_name;
-#ifdef __DEBUG__
-        LOG(DEBUG) << "Setting uniform " << texture->uniform_name << " to texture #" << texture->index;
-#endif
+        LOG(DEBUG) << "Setting uniform " << texture->uniform_name << " to texture #"
+                   << texture->index;
         this->setInt(texture->uniform_name, texture->index);
     }
 
     // TODO: I'm sure this will cause problems later
     for (const auto &shader : this->shaders) {
-#ifdef __DEBUG__
         LOG(DEBUG) << " glDeleteShader(" << shader->getHandle() << ")";
-#endif
         glDeleteShader(shader->getHandle());
     }
 
-#ifdef __DEBUG__
     LOG(DEBUG) << "RenderContext<" << this << ">::compile() END";
-#endif
     this->compiled = true;
 }
 
-void RenderContext::add(const std::shared_ptr<VBO> &vbo) {
+/**
+ * @brief Move a VBO into this render context
+ * @private
+ */
+void RenderContext::add(std::unique_ptr<VBO> &&vbo) {
     LOG(DEBUG) << "Added VBO " << vbo << " to RenderContext " << this;
-    this->vbos.push_back(vbo);
+    this->vbos.push_back(std::move(vbo));
 }
 
-void RenderContext::add(const std::shared_ptr<Shader> &shader) {
+void RenderContext::add(const std::shared_ptr<Shader> &&shader) {
     auto pathName = shader->path;
-    for (std::shared_ptr<Shader> shader : this->shaders) {
+    for (const auto &shader : this->shaders) {
         if (shader->path == pathName)
             throw std::runtime_error("Shader already attached to RenderContext");
     }
-    this->shaders.push_back(shader);
+    this->shaders.push_back(std::move(shader));
 }
 
 /**
- * @brief (Internally) register a texture with the render context, and increment the internal UV index
+ * @brief (Internally) register a texture with the render context, and increment the internal UV
+ * index
  * @param texture: The texture to bind to this render context
  * @param uniform_name: The name of the texture uniform in the shader program
  */
-void RenderContext::add(const std::shared_ptr<Texture> &texture, const std::string uniform_name) {
+void RenderContext::add(const std::shared_ptr<Texture> &&texture, std::string const &uniform_name) {
     auto index = this->uv_count;
     ++this->uv_count;
 
-    for (auto uv : this->textures) {
+    for (const auto &uv : this->textures) {
         if (uv->index == index) {
             std::stringstream err;
             err << "Texture already bound to index " << index;
@@ -119,8 +117,8 @@ void RenderContext::add(const std::shared_ptr<Texture> &texture, const std::stri
  * @param path The path to the texture file
  * @param uniform_name The name of the texture uniform in the shader program
  */
-void RenderContext::loadTexture(std::string path, std::string uniform_name) {
-    this->add(std::make_shared<Texture>(path), uniform_name);
+void RenderContext::loadTexture(std::string const &path, std::string const &uniform_name) {
+    this->add(std::make_unique<Texture>(path), uniform_name);
 }
 
 /**
@@ -128,7 +126,7 @@ void RenderContext::loadTexture(std::string path, std::string uniform_name) {
  * @param path The path to the shader file
  * @param type The type of shader to load (vertex or fragment)
  */
-void RenderContext::loadShader(std::string path, const ShaderType type) {
+void RenderContext::loadShader(std::string const &path, const ShaderType type) {
     this->add(std::make_shared<Shader>(Shader{path, type}));
 }
 
@@ -137,10 +135,10 @@ void RenderContext::loadShader(std::string path, const ShaderType type) {
  */
 GLint RenderContext::getUniform(const std::string &name) const {
     GLint idx = static_cast<GLint>(glGetUniformLocation(this->program, name.c_str()));
-    if (idx <= -1)
-        throw std::runtime_error("Uniform of name '" + name + "' was not found");
+    if (idx <= -1) throw std::runtime_error("Uniform of name '" + name + "' was not found");
 #ifdef __DEBUG__
-    LOG(DEBUG) << " glGetUniformLocation(" << this->program << ", \"" << name << "\") resolved to " << idx;
+    LOG(DEBUG) << " glGetUniformLocation(" << this->program << ", \"" << name << "\") resolved to "
+               << idx;
 #endif
     return idx;
 }
@@ -190,7 +188,8 @@ void RenderContext::setVector(const std::string &name, T *value, size_t count) {
     const T *data = &value[0];
     if constexpr (std::is_floating_point<T>::value) {
 #ifdef __DEBUG__
-        LOG(DEBUG) << " glUniform" << count << "fv(" << uniformAddr << ", " << count << ", " << data << ")";
+        LOG(DEBUG) << " glUniform" << count << "fv(" << uniformAddr << ", " << count << ", " << data
+                   << ")";
 #endif
         if (count == 1)
             glUniform1fv(uniformAddr, count, data);
@@ -202,7 +201,8 @@ void RenderContext::setVector(const std::string &name, T *value, size_t count) {
             glUniform4fv(uniformAddr, count, data);
     } else if (std::is_unsigned<T>::value && std::is_integral<T>::value) {
 #ifdef __DEBUG__
-        LOG(DEBUG) << " glUniform" << count << "uiv(" << uniformAddr << ", " << count << ", " << data << ")";
+        LOG(DEBUG) << " glUniform" << count << "uiv(" << uniformAddr << ", " << count << ", "
+                   << data << ")";
 #endif
         if (count == 1)
             glUniform1uiv(uniformAddr, count, data);
@@ -214,7 +214,8 @@ void RenderContext::setVector(const std::string &name, T *value, size_t count) {
             glUniform4uiv(uniformAddr, count, data);
     } else if (std::is_integral<T>::value) {
 #ifdef __DEBUG__
-        LOG(DEBUG) << " glUniform" << count << "iv(" << uniformAddr << ", " << count << ", " << data << ")";
+        LOG(DEBUG) << " glUniform" << count << "iv(" << uniformAddr << ", " << count << ", " << data
+                   << ")";
 #endif
         if (count == 1)
             glUniform1iv(uniformAddr, count, data);

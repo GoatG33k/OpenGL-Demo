@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/ext/matrix_transform.hpp>
 
 #include "constants.hpp"
 #include "gfx/constants.hpp"
@@ -13,25 +12,27 @@ namespace goat::world {
  *        drawing details, and transformation information.
  */
 struct GameObject {
-    bool active = true;
-    vec3 world_pos = vec3(0.0f, 0.0f, 0.0f);
-    const gfx::ObjectLifetime lifetime = gfx::ObjectLifetime::SCENE;
-    const std::shared_ptr<Transform> transform{};
+    bool active;
+    vec3s world_pos;
+    const gfx::ObjectLifetime lifetime;
+    const std::shared_ptr<Transform> transform;
 
-    static std::shared_ptr<GameObject> create(
-        vec3 world_pos = vec3(0.0f, 0.0f, 0.0f), gfx::ObjectLifetime lifetime = gfx::ObjectLifetime::SCENE,
-        std::shared_ptr<Transform> transform = std::shared_ptr<Transform>(new Transform()), bool active = true) {
+    static inline std::shared_ptr<GameObject> create(
+        vec3s world_pos = vec3s{{0.0f, 0.0f, 0.0f}},
+        const gfx::ObjectLifetime lifetime = gfx::ObjectLifetime::SCENE,
+        const std::shared_ptr<Transform>&& transform = std::shared_ptr<Transform>(new Transform()),
+        bool active = true) {
         return std::make_shared<GameObject>(GameObject{
-            .active = active,
-            .world_pos = world_pos,
-            .lifetime = lifetime,
-            .transform = transform,
+          .active = active,
+          .world_pos = std::move(world_pos),
+          .lifetime = lifetime,
+          .transform = transform,
         });
     }
     // Return if the object is rendered using EBO/indices instead of VBO/vertices
     bool hasEBO() const;
     // Return the model matrix for the object taking its transformations into account
-    glm::mat4 getModelMatrix() const;
+    mat4s& getModelMatrix() const;
     // Apply texture details to related shader uniforms
     void applyUniformData() const;
 };

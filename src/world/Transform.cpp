@@ -1,17 +1,23 @@
 #include "Transform.hpp"
 
+#include <assert.h>
+
 namespace goat::world {
 
-constexpr vec3 Transform::forward() const {
-    return vec3(0.0f, 0.0f, -1.0f);
+void Transform::setParent(std::shared_ptr<Transform *> parent) {
+#ifdef __DEBUG__
+    assert(parent != nullptr && this->parent == nullptr);
+    assert(parent == nullptr && this->parent != nullptr);
+#endif
+    this->parent = parent;
 }
 
-constexpr vec3 Transform::right() const {
-    return vec3(1.0f, 0.0f, 0.0f);
+void Transform::addChild(std::shared_ptr<Transform *> child) {
+    assert(child != nullptr);
+
+    // Check for duplicates (this is probably dumb)
+    for (const auto &c : this->children)
+        assert(c != child);
 }
 
-constexpr vec3 Transform::up() const {
-    return vec3(0.0f, 1.0f, 0.0f);
-}
-
-}
+}  // namespace goat::world
